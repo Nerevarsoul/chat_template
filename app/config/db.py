@@ -8,6 +8,7 @@ class DBSettings(BaseSettings):
     pool_max_overflow: int = 5
     pool_recycle: int = 29
     pool_timeout: int = 10
+    schema: str = "bot"
 
     dsn: AsyncDBDsn = ""
 
