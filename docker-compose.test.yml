@@ -23,8 +23,8 @@ services:
     command: [ "postgres", "-c", "log_statement=all", "-c", "log_destination=stderr" ]
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-#    ports:
-#      - 5432:5432
+    ports:
+      - 5432:5432
     environment:
       POSTGRES_USER: bot
       POSTGRES_PASSWORD: example

@@ -8,7 +8,7 @@ from socketio import ASGIApp
 from uvicorn.loops.uvloop import uvloop_setup
 
 from app import config, api
-# from app.db.registry import registry
+from app.db.registry import registry
 from app.sio import sio
 
 uvloop_setup()
@@ -23,8 +23,8 @@ fastapi_app = FastAPI(
 )
 fastapi_app.include_router(api.router, prefix="/api")
 
-# app.add_event_handler("startup", registry.setup)
-# app.add_event_handler("shutdown", registry.close)
+fastapi_app.add_event_handler("startup", registry.setup)
+fastapi_app.add_event_handler("shutdown", registry.close)
 
 app = ASGIApp(sio, fastapi_app)
 
