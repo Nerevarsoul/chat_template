@@ -3,10 +3,9 @@ from sqlalchemy import Column, BigInteger, String, DateTime, func, Integer, Fore
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import MetaData
 
-from app import config
 from app.db.enums import ChatState, ChatUserRole
 
-Base = declarative_base(metadata=MetaData(schema=config.database.schema_name))
+Base = declarative_base(metadata=MetaData())
 
 
 class User(Base):
@@ -40,5 +39,5 @@ class ChatRelationship(Base):
     user_role = Column(Enum(ChatUserRole))
 
     __table_args__ = (
-        PrimaryKeyConstraint('user_id', 'chat_id', name='chats_relationships_pk')
+        PrimaryKeyConstraint('user_uid', 'chat_id', name='chats_relationships_pk'),
     )
