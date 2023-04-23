@@ -1,9 +1,7 @@
 import enum
 
 
-__all__ = (
-    'ChatState', 'ChatUserRole'
-)
+__all__ = ("ChatState", "ChatUserRole")
 
 
 class ChatState(enum.IntEnum):

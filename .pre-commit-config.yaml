@@ -1,0 +1,10 @@
+default_language_version:
+    python: python3.11
+repos:
+-   repo: local
+    hooks:
+      - id: black
+        name: black
+        entry: python3 -m black --config pyproject.toml
+        language: system
+        types: [python]

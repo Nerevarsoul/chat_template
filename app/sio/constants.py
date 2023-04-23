@@ -1,3 +1,3 @@
-NAMESPACE = '/chat_v1'
+NAMESPACE = "/chat_v1"
 
-USER_HEADER_NAME = 'smart-user-id'
+USER_HEADER_NAME = "smart-user-id"
