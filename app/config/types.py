@@ -13,9 +13,5 @@ class AsyncDBDsn(AnyUrl):
     def server_settings(self) -> None | dict[str, str]:
         if not self.query:
             return None
-        settings = {
-            key_value[0]: key_value[1]
-            for param in self.query.split("&")
-            if (key_value := param.split("="))
-        }
+        settings = {key_value[0]: key_value[1] for param in self.query.split("&") if (key_value := param.split("="))}
         return settings if settings else None
