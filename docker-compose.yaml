@@ -10,6 +10,8 @@ services:
 #      poetry run python app/main.py'
     environment:
       DATABASES_DSN: postgresql+asyncpg://bot-user:example@bot-db:5432/bot
+    volumes:
+      - .:/src
     ports:
       - 8061:8061
     depends_on:
