@@ -7,7 +7,6 @@ from .db import DBSettings
 from .socketio import SocketioSettings
 from .web import WebSettings
 
-
 application: AppSettings = AppSettings()
 cache: CacheSettings = CacheSettings()
 database: DBSettings = DBSettings()

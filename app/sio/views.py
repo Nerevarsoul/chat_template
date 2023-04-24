@@ -1,5 +1,4 @@
 import socketio
-
 from loguru import logger
 from starlette.datastructures import Headers
 

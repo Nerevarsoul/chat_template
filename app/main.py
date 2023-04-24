@@ -3,11 +3,10 @@ import asyncio
 
 import uvicorn
 from fastapi import FastAPI
-
 from socketio import ASGIApp
 from uvicorn.loops.uvloop import uvloop_setup
 
-from app import config, api
+from app import api, config
 from app.db.registry import registry
 from app.sio import sio
 

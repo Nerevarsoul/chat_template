@@ -2,7 +2,6 @@ import socketio
 
 from app.sio.constants import NAMESPACE, USER_HEADER_NAME
 
-
 BASE_URL = "http://127.0.0.1:8081"
 TESTS_TRANSPORTS = ["polling"]
 
