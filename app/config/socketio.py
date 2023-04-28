@@ -1,6 +1,5 @@
 from pydantic import BaseSettings
 
-
 Seconds = int
 
 

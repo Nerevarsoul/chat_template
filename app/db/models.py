@@ -1,15 +1,15 @@
 from sqlalchemy import (
-    Column,
-    BigInteger,
-    String,
-    DateTime,
-    func,
-    Integer,
-    ForeignKey,
-    Boolean,
-    Enum,
     UUID,
+    BigInteger,
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
     PrimaryKeyConstraint,
+    String,
+    func,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import MetaData
