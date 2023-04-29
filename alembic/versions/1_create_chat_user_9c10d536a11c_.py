@@ -69,4 +69,6 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_users_uid"), table_name="users")
     op.drop_table("users")
     op.drop_table("chats")
+    sa.Enum(name="chatuserrole").drop(op.get_bind())
+    sa.Enum(name="chatstate").drop(op.get_bind())
     # ### end Alembic commands ###

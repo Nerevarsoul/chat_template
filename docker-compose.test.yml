@@ -4,28 +4,25 @@ services:
   bot:
     build:
       context: .
-    command: |
-      sh -c
-      'poetry run alembic upgrade head && 
-      poetry run python app/main.py'
     environment:
-      BOT_DATABASE_HOST: bot-db
-      BOT_DATABASE_NAME: test
-      BOT_DATABASE_PASSWORD: example
-      BOT_DATABASE_SCHEMA_NAME: bot
-      BOT_DATABASE_PORT: 5432
-      BOT_DATABASE_USER: bot
+      DATABASES_DSN: postgresql+asyncpg://bot-user:example@bot-db:5432/test
+    volumes:
+      - .:/src
     depends_on:
       - bot-db
 
   bot-db:
     image: postgres:15-alpine3.16
     command: [ "postgres", "-c", "log_statement=all", "-c", "log_destination=stderr" ]
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - 5432:5432
     environment:
-      POSTGRES_USER: bot
+      POSTGRES_USER: bot-user
       POSTGRES_PASSWORD: example
       POSTGRES_DB: test
+
+  bot-redis:
+    image: eqalpha/keydb:x86_64_v6.3.2
+    command: keydb-server --maxmemory 64m --maxmemory-policy noeviction --requirepass 'redis'
+    ports:
+      - 6379:6379
