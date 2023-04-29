@@ -12,8 +12,8 @@ from sqlalchemy import (
     String,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.schema import MetaData
 
 from app.db.enums import ChatState, ChatUserRole
