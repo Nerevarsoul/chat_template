@@ -21,3 +21,8 @@ Documentation is available at `/docs`
 
 1. pre-commit run black --all-files
 2. pre-commit run isort --all-files
+
+
+## Test
+
+1. docker compose -f docker-compose.test.yml run bot poetry run pytest
