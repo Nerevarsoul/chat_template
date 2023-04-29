@@ -1,9 +1,9 @@
 from typing import AsyncGenerator, Generator
 
 import pytest
+
 from alembic.command import downgrade, upgrade
 from alembic.config import Config as AlembicConfig
-
 from app.config import database as db_config
 from app.db.registry import registry
 
