@@ -14,6 +14,6 @@ COPY . .
 
 ENV PYTHONPATH=/src
 
-EXPOSE 8081
+EXPOSE 8061
 
 CMD ["poetry", "run", "python", "app/main.py"]

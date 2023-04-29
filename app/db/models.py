@@ -1,8 +1,9 @@
+from datetime import datetime
+
 from sqlalchemy import (
     UUID,
     BigInteger,
     Boolean,
-    Column,
     DateTime,
     Enum,
     ForeignKey,
@@ -11,6 +12,7 @@ from sqlalchemy import (
     String,
     func,
 )
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import MetaData
 
@@ -22,31 +24,30 @@ Base = declarative_base(metadata=MetaData())
 class User(Base):
     __tablename__ = "users"
 
-    uid = Column(UUID(as_uuid=True), primary_key=True, index=True)
-    name = Column(String(256), nullable=False)
-    is_blocked = Column(Boolean, default=False)
+    uid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    name: Mapped[str] = mapped_column(String(256), nullable=False)
+    is_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class Chat(Base):
     __tablename__ = "chats"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    Column("state", Integer, nullable=False),
-    Column("time_created", DateTime(timezone=True), server_default=func.now()),
-    Column("time_updated", DateTime(timezone=True), onupdate=func.now()),
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    state: Mapped[ChatState] = mapped_column(Enum(ChatState), nullable=False)
+    time_created: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
+    time_updated: Mapped[datetime] = mapped_column(DateTime, onupdate=func.now(), nullable=True)
 
 
 class ChatRelationship(Base):
     __tablename__ = "chats_relationships"
 
-    user_uid = Column(UUID(as_uuid=True), ForeignKey("users.uid"), nullable=False, index=True)
-    chat_id = Column(BigInteger, ForeignKey("chats.id"), nullable=False, index=True)
-    chat_name = Column(String(256), nullable=False)
-    state = Column(Enum(ChatState), nullable=False)
-    is_admin = Column(Boolean, default=False)
-    last_read_message_id = Column(BigInteger)
-    unread_counter = Column(Integer, default=0)
-    is_pinned = Column(Boolean, default=False)
-    user_role = Column(Enum(ChatUserRole))
+    user_uid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.uid"), nullable=False, index=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id"), nullable=False, index=True)
+    chat_name: Mapped[str] = mapped_column(String(256), nullable=False)
+    state: Mapped[ChatState] = mapped_column(Enum(ChatState), nullable=False)
+    last_read_message_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    unread_counter: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    user_role: Mapped[ChatUserRole] = mapped_column(Enum(ChatUserRole), nullable=False)
 
     __table_args__ = (PrimaryKeyConstraint("user_uid", "chat_id", name="chats_relationships_pk"),)
