@@ -14,6 +14,8 @@ class AppSettings(BaseSettings):
     log_level: str = "DEBUG"
     log_sql_query_time: bool = True
 
+    user_header_name: str = "user-id"
+
     @validator("version", always=True)
     def version_validator(cls, value: Optional[str]) -> str:
         return value or "0.1.0"

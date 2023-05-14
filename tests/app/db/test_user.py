@@ -1,9 +1,11 @@
+import pytest
 from sqlalchemy import select
 
 from app.db.models import User
 from app.db.registry import registry
 
 
+@pytest.mark.usefixtures("clear_db")
 async def test_user_factory(user_db_f):
     user = await user_db_f.create()
 
