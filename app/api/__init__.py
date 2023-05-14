@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 
-from . import monitoring
+from . import chats, monitoring
 
 router = APIRouter()
 
 router.include_router(monitoring.router, tags=["monitoring"])
+router.include_router(chats.router, prefix="/chats")

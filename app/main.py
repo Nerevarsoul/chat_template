@@ -7,7 +7,6 @@ from socketio import ASGIApp
 from uvicorn.loops.uvloop import uvloop_setup
 
 from app import api, config
-from app.api import chats
 from app.db.registry import registry
 from app.sio import sio
 
@@ -22,7 +21,6 @@ fastapi_app = FastAPI(
     root_path=config.application.root_path,
 )
 fastapi_app.include_router(api.router, prefix="/api")
-fastapi_app.include_router(chats.router, prefix="/chats")
 
 fastapi_app.add_event_handler("startup", registry.setup)
 fastapi_app.add_event_handler("shutdown", registry.close)
