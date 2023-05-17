@@ -5,4 +5,4 @@ from . import chats, monitoring
 router = APIRouter()
 
 router.include_router(monitoring.router, tags=["monitoring"])
-router.include_router(chats.router, prefix="/chats")
+router.include_router(chats.router, tags=["chats"])

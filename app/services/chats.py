@@ -1,16 +1,13 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
-from app.api.chats.schemas import CreateChatData, CreateChatResponse
 from app.db.enums import ChatState, ChatUserRole
 from app.db.models import Chat, ChatRelationship
 from app.db.registry import registry
+from app.schemas.chats import CreateChatData, CreateChatResponse
 
-router = APIRouter()
 
-
-@router.post("/create", response_model=CreateChatResponse, status_code=status.HTTP_201_CREATED)
-async def create_chat(data: CreateChatData):
+async def create_chat(data: CreateChatData) -> CreateChatResponse:
     try:
         async with registry.session() as session:
             chat = Chat(state=ChatState.ACTIVE)
@@ -34,8 +31,8 @@ async def create_chat(data: CreateChatData):
 
             await session.commit()
     except IntegrityError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
-    response = CreateChatResponse(chat_id=chat.id, chat_name=data.chat_name, contacts=data.contacts)
+    create_chat_response = CreateChatResponse(chat_id=chat.id, chat_name=data.chat_name, contacts=data.contacts)
 
-    return response
+    return create_chat_response

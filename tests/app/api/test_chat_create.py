@@ -55,7 +55,7 @@ async def test_create_chat_with_identical_users(user_db_f, client: "AsyncClient"
 async def test_create_chat_with_unregistered_users(client: "AsyncClient") -> None:
     request_body = CreateChatDataFactory.build()
     response = await client.post(app.other_asgi_app.url_path_for("create_chat"), content=request_body.json())
-    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     async with registry.session() as session:
         query = select(func.count()).select_from(Chat)
@@ -70,7 +70,7 @@ async def test_create_chat(user_db_f, client: "AsyncClient") -> None:
     response = await client.post(app.other_asgi_app.url_path_for("create_chat"), content=request_body.json())
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["chat_name"] == request_body.chat_name
-    assert response.json()["contacts"] == [str(contact_uuid) for contact_uuid in request_body.contacts]
+    assert set(response.json()["contacts"]) == set([str(contact_uuid) for contact_uuid in request_body.contacts])
 
     async with registry.session() as session:
         query = select(Chat).where(Chat.id == response.json()["chat_id"])

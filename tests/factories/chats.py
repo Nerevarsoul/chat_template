@@ -1,6 +1,6 @@
 from pydantic_factories import ModelFactory
 
-from app.api.chats.schemas import CreateChatData
+from app.schemas.chats import CreateChatData
 
 
 class CreateChatDataFactory(ModelFactory):
