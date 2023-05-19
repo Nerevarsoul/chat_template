@@ -128,5 +128,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# VS Code development containers settings
+# VS Code and development containers settings
 .devcontainer
+.idea
+setup.cfg
