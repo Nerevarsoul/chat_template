@@ -16,3 +16,9 @@ class ChatUserRole(enum.IntEnum):
     ADMIN = 2
     USER = 3
     ONLY_FOR_DATA = 4
+
+
+class MessageType(enum.IntEnum):
+    FROM_USER = 1
+    SYSTEM = 2
+    DELETED = 3
