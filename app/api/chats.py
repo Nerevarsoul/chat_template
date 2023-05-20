@@ -1,9 +1,7 @@
-from fastapi import status
-
-from app.schemas.chats import CreateChatData, CreateChatResponse
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from pydantic.types import UUID4
 
+from app.schemas.chats import CreateChatData, CreateChatResponse
 from app.services import chats as chats_service
 from app.services.utils import get_current_user
 

@@ -1,9 +1,9 @@
 from fastapi import HTTPException, status
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
+from app import db
 from app.db.enums import ChatState, ChatUserRole
-from app.db.models import Chat, ChatRelationship
 from app.db.registry import registry
 from app.schemas.chats import CreateChatData, CreateChatResponse
 
@@ -11,7 +11,7 @@ from app.schemas.chats import CreateChatData, CreateChatResponse
 async def create_chat(data: CreateChatData) -> CreateChatResponse:
     try:
         async with registry.session() as session:
-            chat = Chat(state=ChatState.ACTIVE)
+            chat = db.Chat(state=ChatState.ACTIVE)
 
             session.add(chat)
             await session.flush()
@@ -21,7 +21,7 @@ async def create_chat(data: CreateChatData) -> CreateChatResponse:
                     user_role = ChatUserRole.CREATOR.value
                 else:
                     user_role = ChatUserRole.USER
-                chat_relationships = ChatRelationship(
+                chat_relationships = db.ChatRelationship(
                     user_uid=user_uid,
                     chat_id=chat.id,
                     chat_name=data.chat_name,
