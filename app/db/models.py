@@ -37,7 +37,7 @@ class Chat(Base):
     time_created: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
     time_updated: Mapped[datetime] = mapped_column(DateTime, onupdate=func.now(), nullable=True)
 
-    recipients = relationship("ChatRelationship", lazy="noload")
+    recipients = relationship("ChatRelationship", uselist=True, lazy="noload")
 
 
 class ChatRelationship(Base):

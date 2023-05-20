@@ -1,14 +1,15 @@
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import contains_eager, joinedload, outerjoin, selectinload
 
 from app import db
 from app.db.enums import ChatState, ChatUserRole
 from app.db.registry import registry
-from app.schemas.chats import CreateChatData, CreateChatResponse
+from app.schemas import chats as s_chat
 
 
-async def create_chat(data: CreateChatData) -> CreateChatResponse:
+async def create_chat(data: s_chat.CreateChatData) -> s_chat.CreateChatResponse:
     try:
         async with registry.session() as session:
             chat = db.Chat(state=ChatState.ACTIVE)
@@ -34,25 +35,25 @@ async def create_chat(data: CreateChatData) -> CreateChatResponse:
     except IntegrityError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
-    create_chat_response = CreateChatResponse(chat_id=chat.id, chat_name=data.chat_name, contacts=data.contacts)
+    create_chat_response = s_chat.CreateChatResponse(chat_id=chat.id, chat_name=data.chat_name, contacts=data.contacts)
 
     return create_chat_response
 
 
 async def get_chat_list(user_id):
-    query = (
-        select(
-            db.Chat.id,
-            db.Chat.state,
-            db.ChatRelationship.chat_name,
-            db.ChatRelationship.state.label("user_chat_state"),
-            db.ChatRelationship.user_role,
-        )
-        .outerjoin(db.ChatRelationship)
+    chat_subquery = (
+        select(db.Chat.id)
+        .select_from(db.ChatRelationship)
+        .join(db.Chat)
         .where(db.ChatRelationship.user_uid == user_id)
+        .order_by(db.ChatRelationship.chat_id)
+        .subquery("chat_subquery")
+    )
+
+    query = (
+        select(db.Chat).options(selectinload(db.Chat.recipients)).join(chat_subquery, db.Chat.id == chat_subquery.c.id)
     )
 
     async with registry.session() as session:
-        chat_list = (await session.execute(query)).scalars().all()
-
-        return chat_list
+        chat_list = await session.execute(query)
+        return [s_chat.Chat.from_orm(row) for row in chat_list.scalars()]
