@@ -7,7 +7,7 @@ from app.db.enums import ChatState, ChatUserRole
 from app.db.models import Chat, ChatRelationship
 from app.db.registry import registry
 from app.main import app
-from tests.factories.chats import CreateChatDataFactory
+from tests.factories.schemas import CreateChatDataFactory
 
 if TYPE_CHECKING:
     from httpx import AsyncClient

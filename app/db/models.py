@@ -13,7 +13,7 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.schema import MetaData
 
 from app.db.enums import ChatState, ChatUserRole
@@ -36,6 +36,8 @@ class Chat(Base):
     state: Mapped[ChatState] = mapped_column(Enum(ChatState), nullable=False)
     time_created: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
     time_updated: Mapped[datetime] = mapped_column(DateTime, onupdate=func.now(), nullable=True)
+
+    recipients = relationship("ChatRelationship", uselist=True, lazy="noload")
 
 
 class ChatRelationship(Base):

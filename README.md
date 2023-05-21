@@ -25,4 +25,4 @@ Documentation is available at `/docs`
 
 ## Test
 
-1. docker compose -f docker-compose.test.yml run bot poetry run pytest
+1. docker compose -f docker-compose.test.yml run --rm bot poetry run pytest
