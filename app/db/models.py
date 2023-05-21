@@ -60,19 +60,17 @@ class Message(Base):
     __tablename__ = "messages"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    user_uid: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.uid", ondelete="CASCADE"), nullable=True, index=True
-    )
-    chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_uid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.uid"), nullable=True, index=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id"), nullable=False, index=True)
     text: Mapped[str] = mapped_column(Text, nullable=False)
     search_text: Mapped[dict] = mapped_column(TSVECTOR)
     type_: Mapped[MessageType] = mapped_column(Enum(MessageType), nullable=False)
     quoted_message: Mapped[dict] = mapped_column(JSONB)
     mentions: Mapped[dict] = mapped_column(JSONB)
     links: Mapped[list] = mapped_column(ARRAY(String(1000)))
-    original_id: Mapped[int] = mapped_column(ForeignKey("messages.id", ondelete="SET NULL"))
-    original_chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id", ondelete="SET NULL"))
+    original_id: Mapped[int] = mapped_column(ForeignKey("messages.id"))
+    original_chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id"))
     time_created: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
     time_updated: Mapped[datetime] = mapped_column(DateTime, onupdate=func.now(), nullable=True)
 
-    __table_args__ = Index("search_by_chat_name", search_text, postgresql_using="gin")
+    __table_args__ = (Index("search_by_message_text", search_text, postgresql_using="gin"),)
