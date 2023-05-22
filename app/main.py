@@ -3,10 +3,12 @@ import asyncio
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from socketio import ASGIApp
 from uvicorn.loops.uvloop import uvloop_setup
 
 from app import api, config
+from app.api.exception_handlers import request_validation_exception_handler
 from app.db.registry import registry
 from app.sio import sio
 
@@ -24,6 +26,7 @@ fastapi_app.include_router(api.router, prefix="/api")
 
 fastapi_app.add_event_handler("startup", registry.setup)
 fastapi_app.add_event_handler("shutdown", registry.close)
+fastapi_app.add_exception_handler(RequestValidationError, request_validation_exception_handler)
 
 app = ASGIApp(sio, fastapi_app)
 
