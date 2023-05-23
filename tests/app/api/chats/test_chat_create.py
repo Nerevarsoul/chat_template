@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+import pytest
 from fastapi import status
 from sqlalchemy import func, select
 
@@ -13,14 +14,33 @@ if TYPE_CHECKING:
     from httpx import AsyncClient
 
 
+@pytest.mark.usefixtures("clear_db")
 async def test_create_chat_without_chat_name(user_db_f, client: "AsyncClient") -> None:
+    user1 = await user_db_f.create()
+    user2 = await user_db_f.create()
+    request_body = CreateChatDataFactory.build(
+        factory_use_construct=True, chat_name="", contacts=[user1.uid, user2.uid]
+    )
+    response = await client.post(app.other_asgi_app.url_path_for("create_chat"), content=request_body.json())
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"detail": "chat name must contain characters"}
+
+    async with registry.session() as session:
+        query = select(func.count()).select_from(Chat)
+        chats_quantity = (await session.execute(query)).scalar()
+    assert chats_quantity == 0
+
+
+@pytest.mark.usefixtures("clear_db")
+async def test_create_chat_with_chat_name_is_none(user_db_f, client: "AsyncClient") -> None:
     user1 = await user_db_f.create()
     user2 = await user_db_f.create()
     request_body = CreateChatDataFactory.build(
         factory_use_construct=True, chat_name=None, contacts=[user1.uid, user2.uid]
     )
     response = await client.post(app.other_asgi_app.url_path_for("create_chat"), content=request_body.json())
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"detail": "none is not an allowed value"}
 
     async with registry.session() as session:
         query = select(func.count()).select_from(Chat)
@@ -28,11 +48,13 @@ async def test_create_chat_without_chat_name(user_db_f, client: "AsyncClient") -
     assert chats_quantity == 0
 
 
+@pytest.mark.usefixtures("clear_db")
 async def test_create_chat_with_one_contact(user_db_f, client: "AsyncClient") -> None:
     user = await user_db_f.create()
     request_body = CreateChatDataFactory.build(factory_use_construct=True, contacts=[user.uid])
     response = await client.post(app.other_asgi_app.url_path_for("create_chat"), content=request_body.json())
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"detail": "ensure this value has at least 2 items"}
 
     async with registry.session() as session:
         query = select(func.count()).select_from(Chat)
@@ -40,11 +62,13 @@ async def test_create_chat_with_one_contact(user_db_f, client: "AsyncClient") ->
     assert chats_quantity == 0
 
 
+@pytest.mark.usefixtures("clear_db")
 async def test_create_chat_with_identical_users(user_db_f, client: "AsyncClient") -> None:
     user = await user_db_f.create()
     request_body = CreateChatDataFactory.build(factory_use_construct=True, contacts=[user.uid, user.uid])
     response = await client.post(app.other_asgi_app.url_path_for("create_chat"), content=request_body.json())
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"detail": "the list has duplicated items"}
 
     async with registry.session() as session:
         query = select(func.count()).select_from(Chat)
@@ -52,10 +76,12 @@ async def test_create_chat_with_identical_users(user_db_f, client: "AsyncClient"
     assert chats_quantity == 0
 
 
+@pytest.mark.usefixtures("clear_db")
 async def test_create_chat_with_unregistered_users(client: "AsyncClient") -> None:
     request_body = CreateChatDataFactory.build()
     response = await client.post(app.other_asgi_app.url_path_for("create_chat"), content=request_body.json())
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"detail": "Bad Request"}
 
     async with registry.session() as session:
         query = select(func.count()).select_from(Chat)
@@ -63,6 +89,7 @@ async def test_create_chat_with_unregistered_users(client: "AsyncClient") -> Non
     assert chats_quantity == 0
 
 
+@pytest.mark.usefixtures("clear_db")
 async def test_create_chat(user_db_f, client: "AsyncClient") -> None:
     user1 = await user_db_f.create()
     user2 = await user_db_f.create()
