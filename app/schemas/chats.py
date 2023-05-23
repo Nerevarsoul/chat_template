@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from pydantic.types import UUID4
 
 from app.db.enums import ChatState, ChatUserRole
@@ -15,6 +15,12 @@ class CreateChatData(BaseModel):
     contacts: list[UUID4] = Field(
         ..., min_items=2, unique_items=True, description="В чате должно быть как минимум два разных участника"
     )
+
+    @validator("chat_name")
+    def chat_name_contains_only_spaces(cls, chat_name):
+        if not chat_name.strip():
+            raise ValueError("chat name must contain characters")
+        return chat_name
 
 
 class CreateChatResponse(BaseModel):
