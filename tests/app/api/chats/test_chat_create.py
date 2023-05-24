@@ -23,7 +23,7 @@ async def test_create_chat_without_chat_name(user_db_f, client: "AsyncClient") -
     )
     response = await client.post(app.other_asgi_app.url_path_for("create_chat"), content=request_body.json())
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json() == {"detail": "chat name must contain characters"}
+    assert response.json() == {"detail": {"chat_name": "chat name must contain characters"}}
 
     async with registry.session() as session:
         query = select(func.count()).select_from(Chat)
@@ -40,7 +40,7 @@ async def test_create_chat_with_chat_name_is_none(user_db_f, client: "AsyncClien
     )
     response = await client.post(app.other_asgi_app.url_path_for("create_chat"), content=request_body.json())
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json() == {"detail": "none is not an allowed value"}
+    assert response.json() == {"detail": {"chat_name": "none is not an allowed value"}}
 
     async with registry.session() as session:
         query = select(func.count()).select_from(Chat)
@@ -54,7 +54,7 @@ async def test_create_chat_with_one_contact(user_db_f, client: "AsyncClient") ->
     request_body = CreateChatDataFactory.build(factory_use_construct=True, contacts=[user.uid])
     response = await client.post(app.other_asgi_app.url_path_for("create_chat"), content=request_body.json())
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json() == {"detail": "ensure this value has at least 2 items"}
+    assert response.json() == {"detail": {"contacts": "ensure this value has at least 2 items"}}
 
     async with registry.session() as session:
         query = select(func.count()).select_from(Chat)
@@ -68,7 +68,7 @@ async def test_create_chat_with_identical_users(user_db_f, client: "AsyncClient"
     request_body = CreateChatDataFactory.build(factory_use_construct=True, contacts=[user.uid, user.uid])
     response = await client.post(app.other_asgi_app.url_path_for("create_chat"), content=request_body.json())
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json() == {"detail": "the list has duplicated items"}
+    assert response.json() == {"detail": {"contacts": "the list has duplicated items"}}
 
     async with registry.session() as session:
         query = select(func.count()).select_from(Chat)

@@ -17,10 +17,11 @@ class CreateChatData(BaseModel):
     )
 
     @validator("chat_name")
-    def chat_name_contains_only_spaces(cls, chat_name):
-        if not chat_name.strip():
+    def chat_name_contains_only_spaces(cls, chat_name: str) -> str:
+        clear_chat_name = chat_name.strip()
+        if not clear_chat_name:
             raise ValueError("chat name must contain characters")
-        return chat_name
+        return clear_chat_name
 
 
 class CreateChatResponse(BaseModel):
