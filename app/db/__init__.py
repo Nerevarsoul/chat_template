@@ -1,1 +1,1 @@
-from .models import Chat, ChatRelationship, User
+from .models import Chat, ChatRelationship, Message, User
