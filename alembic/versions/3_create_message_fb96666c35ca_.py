@@ -64,4 +64,5 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_messages_user_uid"), table_name="messages")
     op.drop_index(op.f("ix_messages_chat_id"), table_name="messages")
     op.drop_table("messages")
+    sa.Enum(name="messagetype").drop(op.get_bind())
     # ### end Alembic commands ###

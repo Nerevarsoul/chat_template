@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import contains_eager, joinedload, outerjoin, selectinload
+from sqlalchemy.orm import selectinload
 
 from app import db
 from app.db.enums import ChatState, ChatUserRole
@@ -42,16 +42,17 @@ async def create_chat(data: s_chat.CreateChatData) -> s_chat.CreateChatResponse:
 
 async def get_chat_list(user_id):
     chat_subquery = (
-        select(db.Chat.id)
+        select(db.ChatRelationship.chat_id)
         .select_from(db.ChatRelationship)
-        .join(db.Chat)
         .where(db.ChatRelationship.user_uid == user_id)
         .order_by(db.ChatRelationship.chat_id)
         .subquery("chat_subquery")
     )
 
     query = (
-        select(db.Chat).options(selectinload(db.Chat.recipients)).join(chat_subquery, db.Chat.id == chat_subquery.c.id)
+        select(db.Chat)
+        .options(selectinload(db.Chat.recipients))
+        .join(chat_subquery, db.Chat.id == chat_subquery.c.chat_id)
     )
 
     async with registry.session() as session:
