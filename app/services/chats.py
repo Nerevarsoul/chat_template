@@ -9,16 +9,15 @@ from app.db.registry import registry
 from app.schemas import chats as s_chat
 
 
-async def create_chat(data: s_chat.CreateChatData) -> s_chat.CreateChatResponse:
+async def create_chat(data: s_chat.CreateChatData, current_user_uid: str) -> s_chat.CreateChatResponse:
     try:
         async with registry.session() as session:
             chat = db.Chat(state=ChatState.ACTIVE)
 
             session.add(chat)
             await session.flush()
-            current_user_uid = data.contacts[0]
             for user_uid in data.contacts:
-                if user_uid == current_user_uid:
+                if str(user_uid) == current_user_uid:
                     user_role = ChatUserRole.CREATOR.value
                 else:
                     user_role = ChatUserRole.USER
