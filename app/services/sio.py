@@ -8,9 +8,7 @@ from app.schemas.sio import SioEvents
 
 
 async def connect(sid: str, environ: dict) -> str | None:
-    print(environ["asgi.scope"]["headers"])
     headers = Headers(raw=environ["asgi.scope"]["headers"])
-    print(headers)
     logger.debug(f"headers - {headers}")
     user_id = headers.get(config.application.user_header_name)
     if not user_id:
