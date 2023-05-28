@@ -12,7 +12,7 @@ async def test_connect_with_unregistred_user():
         "sid",
         {"asgi.scope": {"headers": [(config.application.user_header_name.encode(), str(uuid.uuid4()).encode())]}},
     )
-    assert event == SioEvents.USER_NOT_FOUND
+    assert event == SioEvents.USER_MISSING
 
 
 async def test_connect_without_user_header():
