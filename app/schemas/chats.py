@@ -12,9 +12,7 @@ __all__ = (
 
 class CreateChatData(BaseModel):
     chat_name: str
-    contacts: list[UUID4] = Field(
-        ..., min_items=2, unique_items=True, description="В чате должно быть как минимум два разных участника"
-    )
+    contacts: list[UUID4]
 
     @validator("chat_name")
     def chat_name_contains_only_spaces(cls, chat_name: str) -> str:
