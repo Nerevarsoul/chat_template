@@ -1,5 +1,3 @@
-import uuid
-
 from fastapi import HTTPException, status
 from pydantic.types import UUID4
 from sqlalchemy import select
@@ -22,14 +20,13 @@ def _get_contacts(contacts: list[UUID4], current_user_uid: UUID4) -> list[UUID4]
     return list(unique_contacts)
 
 
-async def create_chat(data: s_chat.CreateChatData, current_user_uid: str) -> s_chat.CreateChatResponse:
+async def create_chat(data: s_chat.CreateChatData, current_user_uid: UUID4) -> s_chat.CreateChatResponse:
     try:
         async with registry.session() as session:
             chat = db.Chat(state=ChatState.ACTIVE)
 
             session.add(chat)
             await session.flush()
-            current_user_uid = uuid.UUID(current_user_uid)
             contacts = _get_contacts(contacts=data.contacts, current_user_uid=current_user_uid)
             for user_uid in contacts:
                 if user_uid == current_user_uid:
