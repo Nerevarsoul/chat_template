@@ -10,25 +10,15 @@ from app.db.registry import registry
 from app.schemas import chats as s_chat
 
 
-def _get_contacts(contacts: list[UUID4], current_user_uid: UUID4) -> list[UUID4]:
-    contacts.append(current_user_uid)
-    unique_contacts = set(contacts)
-    if len(unique_contacts) == 1:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail={"contacts": "chat cannot be created with one user"}
-        )
-    return list(unique_contacts)
-
-
 async def create_chat(data: s_chat.CreateChatData, current_user_uid: UUID4) -> s_chat.CreateChatResponse:
     try:
         async with registry.session() as session:
             chat = db.Chat(state=ChatState.ACTIVE)
-
             session.add(chat)
             await session.flush()
-            contacts = _get_contacts(contacts=data.contacts, current_user_uid=current_user_uid)
-            for user_uid in contacts:
+
+            data.add_contact(user_uid=current_user_uid)
+            for user_uid in data.contacts:
                 if user_uid == current_user_uid:
                     user_role = ChatUserRole.CREATOR.value
                 else:
@@ -41,12 +31,11 @@ async def create_chat(data: s_chat.CreateChatData, current_user_uid: UUID4) -> s
                     user_role=user_role,
                 )
                 session.add(chat_relationships)
-
             await session.commit()
     except IntegrityError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
-    return s_chat.CreateChatResponse(chat_id=chat.id, chat_name=data.chat_name, contacts=contacts)
+    return s_chat.CreateChatResponse(chat_id=chat.id, chat_name=data.chat_name, contacts=data.contacts)
 
 
 async def get_chat_list(user_id):
