@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from pydantic.types import UUID4
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
@@ -9,14 +10,14 @@ from app.db.registry import registry
 from app.schemas import chats as s_chat
 
 
-async def create_chat(data: s_chat.CreateChatData) -> s_chat.CreateChatResponse:
+async def create_chat(data: s_chat.CreateChatData, current_user_uid: UUID4) -> s_chat.CreateChatResponse:
     try:
         async with registry.session() as session:
             chat = db.Chat(state=ChatState.ACTIVE)
-
             session.add(chat)
             await session.flush()
-            current_user_uid = data.contacts[0]
+
+            data.add_contact(user_uid=current_user_uid)
             for user_uid in data.contacts:
                 if user_uid == current_user_uid:
                     user_role = ChatUserRole.CREATOR.value
@@ -30,14 +31,11 @@ async def create_chat(data: s_chat.CreateChatData) -> s_chat.CreateChatResponse:
                     user_role=user_role,
                 )
                 session.add(chat_relationships)
-
             await session.commit()
     except IntegrityError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
-    create_chat_response = s_chat.CreateChatResponse(chat_id=chat.id, chat_name=data.chat_name, contacts=data.contacts)
-
-    return create_chat_response
+    return s_chat.CreateChatResponse(chat_id=chat.id, chat_name=data.chat_name, contacts=data.contacts)
 
 
 async def get_chat_list(user_id):
