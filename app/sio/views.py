@@ -27,3 +27,13 @@ async def connect_handler(sid: str, environ: dict):
 @sio.on("disconnect", namespace=NAMESPACE)
 async def disconnect_handler(sid: str):
     logger.info(f"Disconnect user: {sid}")
+
+
+@sio.on("usr:msg:create", namespace=NAMESPACE)
+async def create_message_handler(_: str, new_message: dict):
+    logger.debug(f"Receive message: {new_message}")
+    try:
+        await sio_service.process_message(new_message)
+        return {"result": {"success": True}}
+    except Exception as e:
+        return {"error": str(e), "error_code": 500}
