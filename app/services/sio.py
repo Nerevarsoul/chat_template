@@ -37,7 +37,7 @@ async def save_message(message_for_saving: s_sio.NewMessage) -> db.Message:
     return new_message
 
 
-async def validate_new_message(new_message: dict) -> s_sio.NewMessage:
+def validate_new_message(new_message: dict) -> s_sio.NewMessage:
     message_for_saving = s_sio.NewMessage(
         sender_id=new_message["sender_id"],
         chat_id=new_message["chat_id"],
@@ -48,5 +48,5 @@ async def validate_new_message(new_message: dict) -> s_sio.NewMessage:
 
 
 async def process_message(new_message: dict):
-    message_for_saving = await validate_new_message(new_message)
+    message_for_saving = validate_new_message(new_message)
     saved_message = await save_message(message_for_saving)
