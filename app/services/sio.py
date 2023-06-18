@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 from loguru import logger
 from sqlalchemy import func, select
 from sqlalchemy.sql.functions import coalesce
