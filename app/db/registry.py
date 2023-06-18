@@ -39,7 +39,7 @@ class _DBRegistry:
             pool_recycle=self.pool_recycle,
             pool_timeout=self.pool_timeout,
         )
-        self.session = sessionmaker(
+        self.session = sessionmaker(  # type: ignore[call-overload]
             autocommit=False,
             autoflush=False,
             expire_on_commit=False,

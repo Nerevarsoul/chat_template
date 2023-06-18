@@ -1,3 +1,5 @@
+from typing import Optional, Union
+
 from loguru import logger
 from sqlalchemy import func, select
 from sqlalchemy.sql.functions import coalesce
@@ -9,7 +11,7 @@ from app.db.registry import registry
 from app.schemas import sio as s_sio
 
 
-async def connect(sid: str, environ: dict) -> str | None:
+async def connect(sid: str, environ: dict) -> str | None:  # type: ignore[return]
     headers = Headers(raw=environ["asgi.scope"]["headers"])
     logger.debug(f"headers - {headers}")
     user_id = headers.get(config.application.user_header_name)
@@ -47,6 +49,6 @@ def validate_new_message(new_message: dict) -> s_sio.NewMessage:
     return message_for_saving
 
 
-async def process_message(new_message: dict):
+async def process_message(new_message: dict) -> None:
     message_for_saving = validate_new_message(new_message)
     saved_message = await save_message(message_for_saving)

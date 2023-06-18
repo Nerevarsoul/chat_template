@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import asyncio
 
 import uvicorn
 from fastapi import FastAPI
@@ -31,7 +30,7 @@ fastapi_app.add_exception_handler(RequestValidationError, request_validation_exc
 app = ASGIApp(sio, fastapi_app)
 
 
-def main():
+def main() -> None:
     uvicorn.run(app, host=config.web.host, port=config.web.port, access_log=True)
 
 
