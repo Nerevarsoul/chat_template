@@ -24,7 +24,7 @@ from app.db.enums import ChatState, ChatUserRole, MessageType
 Base = declarative_base(metadata=MetaData())
 
 
-class User(Base):
+class User(Base):  # type: ignore[valid-type, misc]
     __tablename__ = "users"
 
     uid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
@@ -32,7 +32,7 @@ class User(Base):
     is_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
-class Chat(Base):
+class Chat(Base):  # type: ignore[valid-type, misc]
     __tablename__ = "chats"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -43,7 +43,7 @@ class Chat(Base):
     recipients = relationship("ChatRelationship", uselist=True, lazy="noload")
 
 
-class ChatRelationship(Base):
+class ChatRelationship(Base):  # type: ignore[valid-type, misc]
     __tablename__ = "chats_relationships"
 
     user_uid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.uid"), nullable=False, index=True)
@@ -58,7 +58,7 @@ class ChatRelationship(Base):
     __table_args__ = (PrimaryKeyConstraint("user_uid", "chat_id", name="chats_relationships_pk"),)
 
 
-class Message(Base):
+class Message(Base):  # type: ignore[valid-type, misc]
     __tablename__ = "messages"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)

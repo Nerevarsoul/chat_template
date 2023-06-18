@@ -4,7 +4,7 @@ BASE_URL = "http://127.0.0.1:8061"
 TESTS_TRANSPORTS = ["polling"]
 
 
-def main():
+def main() -> None:
     sio = socketio.Client(logger=True, engineio_logger=True)
 
     sio.namespaces = ["/chat_v1"]

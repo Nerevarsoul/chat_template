@@ -38,7 +38,7 @@ async def create_chat(data: s_chat.CreateChatData, current_user_uid: UUID4) -> s
     return s_chat.CreateChatResponse(chat_id=chat.id, chat_name=data.chat_name, contacts=data.contacts)
 
 
-async def get_chat_list(user_id):
+async def get_chat_list(user_id: UUID4) -> list[s_chat.Chat]:
     chat_subquery = (
         select(db.ChatRelationship.chat_id)
         .select_from(db.ChatRelationship)

@@ -9,7 +9,7 @@ class DBSettings(BaseSettings):
     pool_recycle: int = 29
     pool_timeout: int = 10
 
-    dsn: AsyncDBDsn = ""
+    dsn: AsyncDBDsn = ""  # type: ignore[assignment]
 
     class Config:
         env_prefix = "databases_"

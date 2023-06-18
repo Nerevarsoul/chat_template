@@ -14,3 +14,11 @@ repos:
         entry: python3 -m isort
         language: system
         types: [python]
+
+      - id: mypy
+        name: mypy
+        exclude: ^tests/|^alembic/
+        entry: python3 -m mypy
+        language: system
+        types: [python]
+        require_serial: true

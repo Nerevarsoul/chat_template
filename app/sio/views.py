@@ -18,19 +18,19 @@ sio = socketio.AsyncServer(
 
 
 @sio.on("connect", namespace=NAMESPACE)
-async def connect_handler(sid: str, environ: dict):
+async def connect_handler(sid: str, environ: dict) -> None:
     event = await sio_service.connect(sid, environ)
     if event:
         await sio.emit(event, {}, room=sid, namespace=NAMESPACE)
 
 
 @sio.on("disconnect", namespace=NAMESPACE)
-async def disconnect_handler(sid: str):
+async def disconnect_handler(sid: str) -> None:
     logger.info(f"Disconnect user: {sid}")
 
 
 @sio.on("usr:msg:create", namespace=NAMESPACE)
-async def create_message_handler(_: str, new_message: dict):
+async def create_message_handler(_: str, new_message: dict) -> dict:
     logger.debug(f"Receive message: {new_message}")
     try:
         await sio_service.process_message(new_message)
