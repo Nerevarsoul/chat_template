@@ -56,3 +56,14 @@ async def get_chat_list(user_id: UUID4) -> list[s_chat.Chat]:
     async with registry.session() as session:
         chat_list = await session.execute(query)
         return [s_chat.Chat.from_orm(row) for row in chat_list.scalars()]
+
+
+async def get_chat_recipients(chat_id: int, user_uid: UUID4) -> list[s_chat.Recipient]:
+    query = select(db.ChatRelationship).where(db.ChatRelationship.chat_id == chat_id)
+
+    async with registry.session() as session:
+        chat_recipients = await session.execute(query)
+        chat_recipients = [s_chat.Recipient.from_orm(row) for row in chat_recipients.scalars()]
+    if user_uid not in [recipient.user_uid for recipient in chat_recipients]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+    return chat_recipients

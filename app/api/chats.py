@@ -18,3 +18,8 @@ async def create_chat(
 @router.get("/chat/management/list")
 async def get_chat_list(user_uid: UUID4 = Depends(get_current_user)) -> list[s_chat.Chat]:
     return await chats_service.get_chat_list(user_uid)
+
+
+@router.get("/recipients")
+async def get_chat_recipients(chat_id: int, user_uid: UUID4 = Depends(get_current_user)) -> list[s_chat.Recipient]:
+    return await chats_service.get_chat_recipients(chat_id=chat_id, user_uid=user_uid)
