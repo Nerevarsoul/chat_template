@@ -70,4 +70,4 @@ async def test_get_chat_recipients_from_non_existent_chat(
         params={"chat_id": 1},
     )
 
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.status_code == status.HTTP_404_NOT_FOUND

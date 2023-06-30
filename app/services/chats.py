@@ -64,6 +64,8 @@ async def get_chat_recipients(chat_id: int, user_uid: UUID4) -> list[s_chat.Reci
     async with registry.session() as session:
         chat_recipients = await session.execute(query)
         chat_recipients = [s_chat.Recipient.from_orm(row) for row in chat_recipients.scalars()]
+    if not chat_recipients:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     if user_uid not in [recipient.user_uid for recipient in chat_recipients]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
     return chat_recipients
