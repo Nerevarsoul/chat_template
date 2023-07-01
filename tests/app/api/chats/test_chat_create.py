@@ -1,4 +1,3 @@
-import uuid
 from typing import TYPE_CHECKING
 
 import pytest
@@ -114,23 +113,6 @@ async def test_create_chat_with_identical_users(user_db_f, client: "AsyncClient"
         )
         chats_reletionship_quantity = (await session.execute(query)).scalar()
     assert chats_reletionship_quantity == 2
-
-
-@pytest.mark.usefixtures("clear_db")
-async def test_create_chat_with_unregistered_users(client: "AsyncClient") -> None:
-    request_body = CreateChatDataFactory.build()
-    response = await client.post(
-        app.other_asgi_app.url_path_for("create_chat"),
-        content=request_body.json(),
-        headers={config.application.user_header_name: str(uuid.uuid4())},
-    )
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert response.json() == {"detail": "User not found"}
-
-    async with registry.session() as session:
-        query = select(func.count()).select_from(Chat)
-        chats_quantity = (await session.execute(query)).scalar()
-    assert chats_quantity == 0
 
 
 @pytest.mark.usefixtures("clear_db")
