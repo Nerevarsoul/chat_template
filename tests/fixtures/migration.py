@@ -4,15 +4,16 @@ import pytest
 
 from alembic.command import downgrade, upgrade
 from alembic.config import Config as AlembicConfig
+
+from app.clients import services_setup, services_close
 from app.config import database as db_config
-from app.db.registry import registry
 
 
 @pytest.fixture(autouse=True)
 async def _registry() -> AsyncGenerator[None, None]:
-    await registry.setup()
+    await services_setup()
     yield
-    await registry.close()
+    await services_close()
 
 
 @pytest.fixture(autouse=True, scope="session")

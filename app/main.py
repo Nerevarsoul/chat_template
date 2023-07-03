@@ -8,7 +8,7 @@ from uvicorn.loops.uvloop import uvloop_setup
 
 from app import api, config
 from app.api.exception_handlers import request_validation_exception_handler
-from app.db.registry import registry
+from app.clients import services_setup, services_close
 from app.sio import sio
 
 uvloop_setup()
@@ -23,8 +23,8 @@ fastapi_app = FastAPI(
 )
 fastapi_app.include_router(api.router, prefix="/api")
 
-fastapi_app.add_event_handler("startup", registry.setup)
-fastapi_app.add_event_handler("shutdown", registry.close)
+fastapi_app.add_event_handler("startup", services_setup)
+fastapi_app.add_event_handler("shutdown", services_close)
 fastapi_app.add_exception_handler(RequestValidationError, request_validation_exception_handler)
 
 app = ASGIApp(sio, fastapi_app)

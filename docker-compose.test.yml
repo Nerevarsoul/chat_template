@@ -6,10 +6,12 @@ services:
       context: .
     environment:
       DATABASES_DSN: postgresql+asyncpg://bot-user:example@bot-db:5432/test
+      CACHE_DSN: redis://redis@redis-bot:6379/3
     volumes:
       - .:/src
     depends_on:
       - bot-db
+      - bot-redis
 
   bot-db:
     image: postgres:15-alpine3.16
