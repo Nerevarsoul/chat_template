@@ -95,5 +95,7 @@ async def add_recipients(data: s_chat.AddRecipientsData, user_uid: UUID4) -> dic
                 session.add(chat_relationships)
             await session.commit()
     except IntegrityError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail={"contacts": "one of contacts is not exist"}
+        )
     return {"result": {"success": True}}
