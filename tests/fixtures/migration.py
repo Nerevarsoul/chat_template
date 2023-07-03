@@ -4,8 +4,7 @@ import pytest
 
 from alembic.command import downgrade, upgrade
 from alembic.config import Config as AlembicConfig
-
-from app.clients import services_setup, services_close
+from app.clients import services_close, services_setup
 from app.config import database as db_config
 
 
