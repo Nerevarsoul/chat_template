@@ -8,7 +8,7 @@ from uvicorn.loops.uvloop import uvloop_setup
 
 from app import api, config
 from app.api.exception_handlers import request_validation_exception_handler
-from app.clients import services_setup, services_close
+from app.clients import services_close, services_setup
 from app.sio import sio
 
 uvloop_setup()
