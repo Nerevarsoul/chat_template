@@ -26,6 +26,7 @@ async def connect_handler(sid: str, environ: dict) -> None:
 
 @sio.on("disconnect", namespace=NAMESPACE)
 async def disconnect_handler(sid: str) -> None:
+    await sio_service.disconnect(sid)
     logger.info(f"Disconnect user: {sid}")
 
 
