@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 from pydantic.types import UUID4
-from sqlalchemy import select
+from sqlalchemy import and_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
@@ -59,8 +59,9 @@ async def get_chat_list(user_id: UUID4) -> list[s_chat.Chat]:
 
 
 async def get_chat_recipients(chat_id: int, user_uid: UUID4) -> list[s_chat.Recipient]:
-    query = select(db.ChatRelationship).where(db.ChatRelationship.chat_id == chat_id)
-
+    query = select(db.ChatRelationship).where(
+        and_(db.ChatRelationship.chat_id == chat_id, db.ChatRelationship.state != ChatState.DELETED)
+    )
     async with registry.session() as session:
         chat_recipients = await session.execute(query)
         chat_recipients = [s_chat.Recipient.from_orm(row) for row in chat_recipients.scalars()]
@@ -69,3 +70,34 @@ async def get_chat_recipients(chat_id: int, user_uid: UUID4) -> list[s_chat.Reci
     if user_uid not in [recipient.user_uid for recipient in chat_recipients]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
     return chat_recipients
+
+
+async def delete_recipients(data: s_chat.DeleteRecipientsData, user_uid: UUID4) -> dict:
+    chat_recipients = await get_chat_recipients(data.chat_id, user_uid)
+    chat_recipients_uids = [recipient.user_uid for recipient in chat_recipients]
+    recipients_uids_for_delete = [contact_uid for contact_uid in data.contacts if contact_uid in chat_recipients_uids]
+    if not recipients_uids_for_delete:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"contacts": "all contacts not in chat"})
+    if len(chat_recipients_uids) - len(recipients_uids_for_delete) < 2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail={"contacts": "only one user will remain in the chat"}
+        )
+    try:
+        async with registry.session() as session:
+            query = (
+                update(db.ChatRelationship)
+                .values(state=ChatState.DELETED)
+                .where(
+                    and_(
+                        db.ChatRelationship.user_uid.in_(recipients_uids_for_delete),
+                        db.ChatRelationship.chat_id == data.chat_id,
+                    )
+                )
+            )
+            await session.execute(query)
+            await session.commit()
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail={"contacts": "one of contacts is not exist"}
+        )
+    return {"result": {"success": True}}

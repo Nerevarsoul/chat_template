@@ -23,3 +23,8 @@ async def get_chat_list(user_uid: UUID4 = Depends(get_current_user)) -> list[s_c
 @router.get("/recipients")
 async def get_chat_recipients(chat_id: int, user_uid: UUID4 = Depends(get_current_user)) -> list[s_chat.Recipient]:
     return await chats_service.get_chat_recipients(chat_id=chat_id, user_uid=user_uid)
+
+
+@router.post("/delete_recipients")
+async def delete_recipients(data: s_chat.DeleteRecipientsData, user_uid: UUID4 = Depends(get_current_user)) -> dict:
+    return await chats_service.delete_recipients(data, user_uid)
