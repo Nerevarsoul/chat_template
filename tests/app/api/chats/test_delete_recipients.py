@@ -1,3 +1,4 @@
+import uuid
 from typing import TYPE_CHECKING
 
 import pytest
@@ -228,3 +229,22 @@ async def test_delete_recipients(client: "AsyncClient", user_db_f, chat_relation
     assert user_1_relationships.state == ChatState.ACTIVE
     assert user_2_relationships.state == ChatState.ACTIVE
     assert user_3_relationships.state == ChatState.DELETED
+
+
+@pytest.mark.usefixtures("clear_db")
+async def test_delete_not_exist_recipients(
+    client: "AsyncClient", user_db_f, chat_relationship_db_f, chat_db_f
+) -> None:
+    user_1 = await user_db_f.create()
+    user_2_uid = uuid.uuid4()
+    chat = await chat_db_f.create()
+    await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user_1.uid, user_role=ChatUserRole.CREATOR)
+
+    response = await client.post(
+        app.other_asgi_app.url_path_for("delete_recipients"),
+        headers={config.application.user_header_name: str(user_1.uid)},
+        json={"chat_id": chat.id, "contacts": [str(user_2_uid)]},
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"detail": {"contacts": "all contacts not in chat"}}
