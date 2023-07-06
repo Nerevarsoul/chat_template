@@ -21,6 +21,7 @@ async def test_connect_without_user_header():
 
 
 @pytest.mark.usefixtures("clear_db")
+@pytest.mark.usefixtures("clear_cache")
 async def test_connect(user_db_f):
     user = await user_db_f.create()
     event = await sio_service.connect(
