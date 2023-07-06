@@ -72,6 +72,36 @@ async def get_chat_recipients(chat_id: int, user_uid: UUID4) -> list[s_chat.Reci
     return chat_recipients
 
 
+async def add_recipients(data: s_chat.AddRecipientsData, user_uid: UUID4) -> dict:
+    chat_recipients = await get_chat_recipients(data.chat_id, user_uid)
+    chat_recipients_uids = [recipient.user_uid for recipient in chat_recipients]
+    new_recipients_uids = [contact_uid for contact_uid in data.contacts if contact_uid not in chat_recipients_uids]
+    if not new_recipients_uids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail={"contacts": "all contacts already in chat"}
+        )
+    for chat_recipient in chat_recipients:
+        if chat_recipient.user_role == ChatUserRole.CREATOR:
+            chat_name = chat_recipient.chat_name
+    try:
+        async with registry.session() as session:
+            for recipient_uid in new_recipients_uids:
+                chat_relationships = db.ChatRelationship(
+                    user_uid=recipient_uid,
+                    chat_id=data.chat_id,
+                    chat_name=chat_name,
+                    state=ChatState.ACTIVE,
+                    user_role=ChatUserRole.USER,
+                )
+                session.add(chat_relationships)
+            await session.commit()
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail={"contacts": "one of contacts is not exist"}
+        )
+    return {"result": {"success": True}}
+
+
 async def delete_recipients(data: s_chat.DeleteRecipientsData, user_uid: UUID4) -> dict:
     chat_recipients = await get_chat_recipients(data.chat_id, user_uid)
     chat_recipients_uids = [recipient.user_uid for recipient in chat_recipients]
