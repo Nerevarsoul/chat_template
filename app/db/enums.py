@@ -1,6 +1,10 @@
 import enum
 
-__all__ = ("ChatState", "ChatUserRole")
+__all__ = (
+    "ChatState",
+    "ChatUserRole",
+    "MessageType",
+)
 
 
 class ChatState(enum.IntEnum):

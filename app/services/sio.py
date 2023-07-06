@@ -7,6 +7,7 @@ from app import config, db
 from app.db.enums import MessageType
 from app.db.registry import registry
 from app.schemas import sio as s_sio
+from app.services import cache as cache_service
 
 
 async def connect(sid: str, environ: dict) -> str | None:  # type: ignore[return]
@@ -20,7 +21,12 @@ async def connect(sid: str, environ: dict) -> str | None:  # type: ignore[return
         if not (await session.execute(query)).scalar():
             return s_sio.SioEvents.USER_MISSING
     logger.debug(f"User id - {user_id}")
+    await cache_service.create_sid_cache(user_id, sid)
     logger.info(f"Connect user: {user_id} with sid: {sid}")
+
+
+async def disconnect(sid: str) -> None:
+    await cache_service.remove_sid_cache(sid)
 
 
 async def save_message(message_for_saving: s_sio.NewMessage) -> db.Message:
