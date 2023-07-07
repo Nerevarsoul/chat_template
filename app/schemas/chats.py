@@ -8,8 +8,7 @@ __all__ = (
     "CreateChatData",
     "CreateChatResponse",
     "Chat",
-    "AddRecipientsData",
-    "DeleteRecipientsData",
+    "ManageRecipientsData",
 )
 
 
@@ -59,11 +58,6 @@ class Chat(BaseModel):
         orm_mode = True
 
 
-class AddRecipientsData(BaseModel):
-    chat_id: int
-    contacts: list[UUID4]
-
-
-class DeleteRecipientsData(BaseModel):
+class ManageRecipientsData(BaseModel):
     chat_id: int
     contacts: list[UUID4]

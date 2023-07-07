@@ -72,7 +72,7 @@ async def get_chat_recipients(chat_id: int, user_uid: UUID4) -> list[s_chat.Reci
     return chat_recipients
 
 
-async def add_recipients(data: s_chat.AddRecipientsData, user_uid: UUID4) -> dict:
+async def add_recipients(data: s_chat.ManageRecipientsData, user_uid: UUID4) -> dict:
     chat_recipients = await get_chat_recipients(data.chat_id, user_uid)
     chat_recipients_uids = [recipient.user_uid for recipient in chat_recipients]
     new_recipients_uids = [contact_uid for contact_uid in data.contacts if contact_uid not in chat_recipients_uids]
@@ -102,7 +102,7 @@ async def add_recipients(data: s_chat.AddRecipientsData, user_uid: UUID4) -> dic
     return {"result": {"success": True}}
 
 
-async def delete_recipients(data: s_chat.DeleteRecipientsData, user_uid: UUID4) -> dict:
+async def delete_recipients(data: s_chat.ManageRecipientsData, user_uid: UUID4) -> dict:
     chat_recipients = await get_chat_recipients(data.chat_id, user_uid)
     chat_recipients_uids = [recipient.user_uid for recipient in chat_recipients]
     recipients_uids_for_delete = [contact_uid for contact_uid in data.contacts if contact_uid in chat_recipients_uids]

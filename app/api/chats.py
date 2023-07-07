@@ -26,10 +26,10 @@ async def get_chat_recipients(chat_id: int, user_uid: UUID4 = Depends(get_curren
 
 
 @router.post("/add_recipients")
-async def add_recipients(data: s_chat.AddRecipientsData, user_uid: UUID4 = Depends(get_current_user)) -> dict:
+async def add_recipients(data: s_chat.ManageRecipientsData, user_uid: UUID4 = Depends(get_current_user)) -> dict:
     return await chats_service.add_recipients(data, user_uid)
 
 
 @router.post("/delete_recipients")
-async def delete_recipients(data: s_chat.DeleteRecipientsData, user_uid: UUID4 = Depends(get_current_user)) -> dict:
+async def delete_recipients(data: s_chat.ManageRecipientsData, user_uid: UUID4 = Depends(get_current_user)) -> dict:
     return await chats_service.delete_recipients(data, user_uid)

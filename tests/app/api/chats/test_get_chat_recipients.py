@@ -2,11 +2,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 from fastapi import status
-from sqlalchemy import and_, update
 
-from app import config, db
+from app import config
 from app.db.enums import ChatState, ChatUserRole
-from app.db.registry import registry
 from app.main import app
 
 if TYPE_CHECKING:
@@ -76,7 +74,7 @@ async def test_get_chat_recipients_from_non_existent_chat(
 
 
 @pytest.mark.usefixtures("clear_db")
-async def test_get_chat_recipients_after_delete_recipient_from_chat(
+async def test_get_chat_recipients_if_deleted_recipients_exist(
     client: "AsyncClient", user_db_f, chat_relationship_db_f, chat_db_f
 ) -> None:
     user_1 = await user_db_f.create()
@@ -85,26 +83,7 @@ async def test_get_chat_recipients_after_delete_recipient_from_chat(
     chat = await chat_db_f.create()
     await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user_1.uid, user_role=ChatUserRole.CREATOR)
     await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user_2.uid)
-    await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user_3.uid)
-
-    response = await client.get(
-        app.other_asgi_app.url_path_for("get_chat_recipients"),
-        headers={config.application.user_header_name: str(user_1.uid)},
-        params={"chat_id": chat.id},
-    )
-    chat_recipients = response.json()
-
-    assert response.status_code == status.HTTP_200_OK
-    assert len(chat_recipients) == 3
-
-    async with registry.session() as session:
-        query = (
-            update(db.ChatRelationship)
-            .values(state=ChatState.DELETED)
-            .where(and_(db.ChatRelationship.user_uid == user_3.uid, db.ChatRelationship.chat_id == chat.id))
-        )
-        await session.execute(query)
-        await session.commit()
+    await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user_3.uid, state=ChatState.DELETED)
 
     response = await client.get(
         app.other_asgi_app.url_path_for("get_chat_recipients"),
