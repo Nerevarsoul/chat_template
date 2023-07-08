@@ -33,3 +33,8 @@ async def add_recipients(data: s_chat.AddRecipientsData, user_uid: UUID4 = Depen
 @router.post("/archive")
 async def archive_chat(chat_id: int, user_uid: UUID4 = Depends(get_current_user)) -> dict:
     return await chats_service.archive_chat(chat_id, user_uid)
+
+
+@router.post("/unarchive")
+async def unarchive_chat(chat_id: int, user_uid: UUID4 = Depends(get_current_user)) -> dict:
+    return await chats_service.unarchive_chat(chat_id, user_uid)

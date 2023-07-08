@@ -130,3 +130,34 @@ async def archive_chat(chat_id: int, user_uid: UUID4) -> dict:
     except IntegrityError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
     return {"result": {"success": True}}
+
+
+async def unarchive_chat(chat_id: int, user_uid: UUID4) -> dict:
+    query = select(db.ChatRelationship).where(
+        and_(db.ChatRelationship.chat_id == chat_id, db.ChatRelationship.user_uid == user_uid)
+    )
+
+    try:
+        async with registry.session() as session:
+            chat_relationship = (await session.execute(query)).scalar()
+            if not chat_relationship:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+            if chat_relationship.state != ChatState.ARCHIVE:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail={"chat_id": "chat is not archived"}
+                )
+            update_query = (
+                update(db.ChatRelationship)
+                .values(state=ChatState.ACTIVE)
+                .where(
+                    and_(
+                        db.ChatRelationship.user_uid == user_uid,
+                        db.ChatRelationship.chat_id == chat_id,
+                    )
+                )
+            )
+            await session.execute(update_query)
+            await session.commit()
+    except IntegrityError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+    return {"result": {"success": True}}
