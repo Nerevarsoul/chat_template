@@ -72,7 +72,7 @@ async def get_chat_recipients(chat_id: int, user_uid: UUID4) -> list[s_chat.Reci
     return chat_recipients
 
 
-async def add_recipients(data: s_chat.ManageRecipientsData, user_uid: UUID4) -> dict:
+async def add_recipients(data: s_chat.ManageRecipientsData, user_uid: UUID4) -> s_chat.ChatApiResponse:
     chat_recipients = await get_chat_recipients(data.chat_id, user_uid)
     chat_recipients_uids = [recipient.user_uid for recipient in chat_recipients]
     new_recipients_uids = [contact_uid for contact_uid in data.contacts if contact_uid not in chat_recipients_uids]
@@ -99,10 +99,10 @@ async def add_recipients(data: s_chat.ManageRecipientsData, user_uid: UUID4) -> 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail={"contacts": "one of contacts is not exist"}
         )
-    return {"result": {"success": True}}
+    return s_chat.ChatApiResponse(result=s_chat.Result(success=True))
 
 
-async def delete_recipients(data: s_chat.ManageRecipientsData, user_uid: UUID4) -> dict:
+async def delete_recipients(data: s_chat.ManageRecipientsData, user_uid: UUID4) -> s_chat.ChatApiResponse:
     chat_recipients = await get_chat_recipients(data.chat_id, user_uid)
     chat_recipients_uids = [recipient.user_uid for recipient in chat_recipients]
     recipients_uids_for_delete = [contact_uid for contact_uid in data.contacts if contact_uid in chat_recipients_uids]
@@ -130,10 +130,10 @@ async def delete_recipients(data: s_chat.ManageRecipientsData, user_uid: UUID4) 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail={"contacts": "one of contacts is not exist"}
         )
-    return {"result": {"success": True}}
+    return s_chat.ChatApiResponse(result=s_chat.Result(success=True))
 
 
-async def archive_chat(chat_id: int, user_uid: UUID4) -> dict:
+async def archive_chat(chat_id: int, user_uid: UUID4) -> s_chat.ChatApiResponse:
     query = select(db.ChatRelationship).where(
         and_(db.ChatRelationship.chat_id == chat_id, db.ChatRelationship.user_uid == user_uid)
     )
@@ -161,10 +161,10 @@ async def archive_chat(chat_id: int, user_uid: UUID4) -> dict:
             await session.commit()
     except IntegrityError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-    return {"result": {"success": True}}
+    return s_chat.ChatApiResponse(result=s_chat.Result(success=True))
 
 
-async def unarchive_chat(chat_id: int, user_uid: UUID4) -> dict:
+async def unarchive_chat(chat_id: int, user_uid: UUID4) -> s_chat.ChatApiResponse:
     query = select(db.ChatRelationship).where(
         and_(db.ChatRelationship.chat_id == chat_id, db.ChatRelationship.user_uid == user_uid)
     )
@@ -192,4 +192,4 @@ async def unarchive_chat(chat_id: int, user_uid: UUID4) -> dict:
             await session.commit()
     except IntegrityError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-    return {"result": {"success": True}}
+    return s_chat.ChatApiResponse(result=s_chat.Result(success=True))

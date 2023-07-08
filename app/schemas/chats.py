@@ -61,3 +61,11 @@ class Chat(BaseModel):
 class ManageRecipientsData(BaseModel):
     chat_id: int
     contacts: list[UUID4]
+
+
+class Result(BaseModel):
+    success: bool
+
+
+class ChatApiResponse(BaseModel):
+    result: Result
