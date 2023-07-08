@@ -71,3 +71,26 @@ async def test_get_chat_recipients_from_non_existent_chat(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.usefixtures("clear_db")
+async def test_get_chat_recipients_if_deleted_recipients_exist(
+    client: "AsyncClient", user_db_f, chat_relationship_db_f, chat_db_f
+) -> None:
+    user_1 = await user_db_f.create()
+    user_2 = await user_db_f.create()
+    user_3 = await user_db_f.create()
+    chat = await chat_db_f.create()
+    await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user_1.uid, user_role=ChatUserRole.CREATOR)
+    await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user_2.uid)
+    await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user_3.uid, state=ChatState.DELETED)
+
+    response = await client.get(
+        app.other_asgi_app.url_path_for("get_chat_recipients"),
+        headers={config.application.user_header_name: str(user_1.uid)},
+        params={"chat_id": chat.id},
+    )
+    chat_recipients = response.json()
+
+    assert response.status_code == status.HTTP_200_OK
+    assert len(chat_recipients) == 2
