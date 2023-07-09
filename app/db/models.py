@@ -15,8 +15,7 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TSVECTOR
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, declarative_base, mapped_column, relationship
 from sqlalchemy.schema import MetaData
 
 from app.db.enums import ChatState, ChatUserRole, MessageType
@@ -64,6 +63,7 @@ class Message(Base):  # type: ignore[valid-type, misc]
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_uid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.uid"), nullable=True, index=True)
     chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id"), nullable=False, index=True)
+    client_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), nullable=False, unique=True)
     text: Mapped[str] = mapped_column(Text, nullable=False)
     search_text: Mapped[dict] = mapped_column(TSVECTOR, nullable=False)
     type_: Mapped[MessageType] = mapped_column(Enum(MessageType), nullable=False)

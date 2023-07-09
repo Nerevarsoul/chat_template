@@ -21,7 +21,7 @@ Documentation is available at `/docs`
 
 1. pre-commit run black --all-files
 2. pre-commit run isort --all-files
-2. pre-commit run mypy --all-file
+3. pre-commit run mypy --all-file
 
 
 ## Test
