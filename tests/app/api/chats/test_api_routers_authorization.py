@@ -19,6 +19,8 @@ if TYPE_CHECKING:
         ("get_chat_recipients", "GET"),
         ("add_recipients", "POST"),
         ("delete_recipients", "POST"),
+        ("archive_chat", "POST"),
+        ("unarchive_chat", "POST"),
     ],
 )
 async def test_request_without_user_id(client: "AsyncClient", view_name, method: str) -> None:
@@ -36,6 +38,8 @@ async def test_request_without_user_id(client: "AsyncClient", view_name, method:
         ("get_chat_recipients", "GET"),
         ("add_recipients", "POST"),
         ("delete_recipients", "POST"),
+        ("archive_chat", "POST"),
+        ("unarchive_chat", "POST"),
     ],
 )
 async def test_request_with_user_not_exist(client: "AsyncClient", view_name: str, method: str) -> None:
