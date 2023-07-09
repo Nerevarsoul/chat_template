@@ -25,11 +25,25 @@ async def get_chat_recipients(chat_id: int, user_uid: UUID4 = Depends(get_curren
     return await chats_service.get_chat_recipients(chat_id=chat_id, user_uid=user_uid)
 
 
-@router.post("/add_recipients")
-async def add_recipients(data: s_chat.ManageRecipientsData, user_uid: UUID4 = Depends(get_current_user)) -> dict:
+@router.post("/add_recipients", response_model=s_chat.ChatApiResponse, status_code=status.HTTP_200_OK)
+async def add_recipients(
+    data: s_chat.ManageRecipientsData, user_uid: UUID4 = Depends(get_current_user)
+) -> s_chat.ChatApiResponse:
     return await chats_service.add_recipients(data, user_uid)
 
 
-@router.post("/delete_recipients")
-async def delete_recipients(data: s_chat.ManageRecipientsData, user_uid: UUID4 = Depends(get_current_user)) -> dict:
+@router.post("/delete_recipients", response_model=s_chat.ChatApiResponse, status_code=status.HTTP_200_OK)
+async def delete_recipients(
+    data: s_chat.ManageRecipientsData, user_uid: UUID4 = Depends(get_current_user)
+) -> s_chat.ChatApiResponse:
     return await chats_service.delete_recipients(data, user_uid)
+
+
+@router.post("/archive", response_model=s_chat.ChatApiResponse, status_code=status.HTTP_200_OK)
+async def archive_chat(chat_id: int, user_uid: UUID4 = Depends(get_current_user)) -> s_chat.ChatApiResponse:
+    return await chats_service.archive_chat(chat_id, user_uid)
+
+
+@router.post("/unarchive", response_model=s_chat.ChatApiResponse, status_code=status.HTTP_200_OK)
+async def unarchive_chat(chat_id: int, user_uid: UUID4 = Depends(get_current_user)) -> s_chat.ChatApiResponse:
+    return await chats_service.unarchive_chat(chat_id, user_uid)
