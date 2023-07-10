@@ -1,5 +1,6 @@
 from loguru import logger
 from sqlalchemy import func, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.functions import coalesce
 from starlette.datastructures import Headers
 
@@ -29,30 +30,23 @@ async def disconnect(sid: str) -> None:
     await cache_service.remove_sid_cache(sid)
 
 
-async def save_message(message_for_saving: s_sio.NewMessage) -> db.Message:
+async def save_message(message_for_saving: s_sio.NewMessage) -> bool:
     async with registry.session() as session:
-        new_message = db.Message(
-            user_uid=message_for_saving.sender_id,
-            chat_id=message_for_saving.chat_id,
-            text=message_for_saving.text,
-            search_text=func.to_tsvector(coalesce(message_for_saving.text.lower(), "")),
-            type_=MessageType.FROM_USER,
+        query = (
+            insert(db.Message)
+            .values(
+                **message_for_saving.dict(),
+                search_text=func.to_tsvector(coalesce(message_for_saving.text.lower(), "")),
+                type_=MessageType.FROM_USER,
+            )
+            .on_conflict_do_nothing(
+                constraint="messages_client_id_key",
+            )
         )
-        session.add(new_message)
+        res = await session.execute(query)
         await session.commit()
-    return new_message
+    return res.is_insert and res.rowcount == 1
 
 
-def validate_new_message(new_message: dict) -> s_sio.NewMessage:
-    message_for_saving = s_sio.NewMessage(
-        sender_id=new_message["sender_id"],
-        chat_id=new_message["chat_id"],
-        client_id=new_message["client_id"],
-        text=new_message["text"],
-    )
-    return message_for_saving
-
-
-async def process_message(new_message: dict) -> None:
-    message_for_saving = validate_new_message(new_message)
-    saved_message = await save_message(message_for_saving)
+async def process_message(new_message: dict) -> bool:
+    return await save_message(s_sio.NewMessage(**new_message))

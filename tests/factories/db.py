@@ -4,7 +4,7 @@ import factory
 import pytest
 
 from app import db
-from app.db.enums import ChatState, ChatUserRole
+from app.db.enums import ChatState, ChatUserRole, MessageType
 from app.db.registry import registry
 from tests.app.db.utils import AsyncSQLAlchemyFactory
 
@@ -44,6 +44,27 @@ class ChatRelationshipFactory(AsyncSQLAlchemyFactory):
         sqlalchemy_session = lambda: registry.session
 
 
+class MessageFactory(AsyncSQLAlchemyFactory):
+    id = factory.Faker("pyint")
+    user_uid = factory.LazyFunction(uuid.uuid4)
+    chat_id = factory.Faker("pyint")
+    client_id = factory.LazyFunction(uuid.uuid4)
+    text = factory.Faker("pystr", min_chars=10, max_chars=30)
+    search_text = factory.Faker("pystr", min_chars=10, max_chars=30)
+    type_ = MessageType.FROM_USER
+    quoted_message = None
+    mentions = None
+    links = None
+    original_id = None
+    original_chat_id = None
+    time_created = factory.Faker("past_datetime")
+    time_updated = None
+
+    class Meta:
+        model = db.Message
+        sqlalchemy_session = lambda: registry.session
+
+
 @pytest.fixture
 def user_db_f() -> type[UserFactory]:
     return UserFactory
@@ -57,3 +78,8 @@ def chat_db_f() -> type[ChatFactory]:
 @pytest.fixture
 def chat_relationship_db_f() -> type[ChatRelationshipFactory]:
     return ChatRelationshipFactory
+
+
+@pytest.fixture
+def message_db_f() -> type[MessageFactory]:
+    return MessageFactory

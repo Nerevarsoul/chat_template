@@ -10,6 +10,7 @@ services:
 #      poetry run python app/main.py'
     environment:
       DATABASES_DSN: postgresql+asyncpg://bot-user:example@bot-db:5432/bot
+      CACHE_DSN: redis://default:redis@bot-redis:6379/3
     volumes:
       - .:/src
     ports:
