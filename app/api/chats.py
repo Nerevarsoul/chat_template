@@ -15,9 +15,9 @@ async def create_chat(
     return await chats_service.create_chat(data, current_user_uid)
 
 
-@router.get("/chat/management/list")
-async def get_chat_list(user_uid: UUID4 = Depends(get_current_user)) -> list[s_chat.Chat]:
-    return await chats_service.get_chat_list(user_uid)
+@router.get("/list")
+async def get_chat_list(from_archive: bool = False, user_uid: UUID4 = Depends(get_current_user)) -> list[s_chat.Chat]:
+    return await chats_service.get_chat_list(from_archive, user_uid)
 
 
 @router.get("/recipients")
