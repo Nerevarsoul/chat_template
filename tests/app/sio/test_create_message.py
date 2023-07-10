@@ -14,8 +14,8 @@ async def test_create_message(user_db_f, chat_db_f):
     chat = await chat_db_f.create()
     new_message = NewMessageFactory.build(sender_id=user.uid, chat_id=chat.id)
 
-    event = await sio_service.process_message(new_message=new_message.dict())
-    assert event is None
+    is_inserted = await sio_service.process_message(new_message=new_message.dict(by_alias=True))
+    assert is_inserted is True
 
     async with registry.session() as session:
         query = select(func.count()).select_from(Message).where(Message.chat_id == chat.id)
@@ -29,6 +29,23 @@ async def test_create_message(user_db_f, chat_db_f):
     assert message.chat_id == chat.id
     assert message.text == new_message.text
     assert message.type_ == MessageType.FROM_USER
+
+
+@pytest.mark.usefixtures("clear_db")
+async def test_retry_create_message(user_db_f, chat_db_f, message_db_f):
+    user = await user_db_f.create()
+    chat = await chat_db_f.create()
+
+    new_message = NewMessageFactory.build(sender_id=user.uid, chat_id=chat.id)
+    await message_db_f.create(user_uid=user.uid, chat_id=chat.id, client_id=new_message.client_id)
+
+    is_inserted = await sio_service.process_message(new_message=new_message.dict(by_alias=True))
+    assert is_inserted is False
+
+    async with registry.session() as session:
+        query = select(func.count()).select_from(Message).where(Message.chat_id == chat.id)
+        messages_quantity = (await session.execute(query)).scalar()
+    assert messages_quantity == 1
 
 
 @pytest.mark.usefixtures("clear_db")

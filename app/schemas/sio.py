@@ -1,6 +1,6 @@
 import enum
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, Field, validator
 from pydantic.types import UUID4
 
 
@@ -9,7 +9,7 @@ class SioEvents(enum.StrEnum):
 
 
 class NewMessage(BaseModel):
-    sender_id: UUID4
+    user_uid: UUID4 = Field(alias="sender_id")
     chat_id: int
     client_id: UUID4
     text: str
