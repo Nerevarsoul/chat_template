@@ -38,11 +38,18 @@ async def create_chat(data: s_chat.CreateChatData, current_user_uid: UUID4) -> s
     return s_chat.CreateChatResponse(chat_id=chat.id, chat_name=data.chat_name, contacts=data.contacts)
 
 
-async def get_chat_list(user_id: UUID4) -> list[s_chat.Chat]:
+async def get_chat_list(from_archive: bool, user_id: UUID4) -> list[s_chat.Chat]:
+    condition = db.ChatRelationship.user_uid == user_id
+
+    if from_archive:
+        condition &= db.ChatRelationship.state == ChatState.ARCHIVE
+    else:
+        condition &= db.ChatRelationship.state == ChatState.ACTIVE
+
     chat_subquery = (
         select(db.ChatRelationship.chat_id)
         .select_from(db.ChatRelationship)
-        .where(db.ChatRelationship.user_uid == user_id)
+        .where(condition)
         .order_by(db.ChatRelationship.chat_id)
         .subquery("chat_subquery")
     )
