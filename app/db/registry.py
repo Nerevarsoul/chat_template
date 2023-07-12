@@ -1,12 +1,12 @@
 from typing import Callable
 
+from pydantic import PostgresDsn
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from sqlalchemy.pool import AsyncAdaptedQueuePool
 
 from app import config
-from app.config.types import AsyncDBDsn
 
 
 class _DBRegistry:
@@ -15,7 +15,7 @@ class _DBRegistry:
 
     def __init__(
         self,
-        dsn: AsyncDBDsn,
+        dsn: PostgresDsn,
         pool_size: int = config.database.pool_size,
         pool_max_overflow: int = config.database.pool_max_overflow,
         pool_recycle: int = config.database.pool_recycle,
@@ -30,8 +30,7 @@ class _DBRegistry:
 
     async def setup(self) -> None:
         self.engine = create_async_engine(
-            self.dsn.clear_dsn,
-            connect_args={"server_settings": self.dsn.server_settings},
+            str(self.dsn),
             poolclass=AsyncAdaptedQueuePool,
             pool_size=self.pool_size,
             max_overflow=self.pool_max_overflow,

@@ -1,4 +1,4 @@
-from pydantic_factories import ModelFactory
+from polyfactory.factories.pydantic_factory import ModelFactory
 
 from app.schemas import sio as s_sio
 from app.schemas.chats import CreateChatData

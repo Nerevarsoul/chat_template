@@ -4,7 +4,7 @@ from app import config
 from app.db.registry import registry
 
 cache = redis.from_url(
-    url=config.cache.dsn, max_connections=config.cache.max_connections, encoding="utf-8", decode_responses=True
+    url=str(config.cache.dsn), max_connections=config.cache.max_connections, encoding="utf-8", decode_responses=True
 )
 
 

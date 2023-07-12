@@ -12,7 +12,7 @@ from app import config as app_config
 from app.db.models import Base
 
 config = context.config
-config.set_main_option("sqlalchemy.url", app_config.database.dsn)
+config.set_main_option("sqlalchemy.url", str(app_config.database.dsn))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
