@@ -1,4 +1,4 @@
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .types import AsyncDBDsn
 
@@ -11,5 +11,6 @@ class DBSettings(BaseSettings):
 
     dsn: AsyncDBDsn = ""  # type: ignore[assignment]
 
-    class Config:
-        env_prefix = "databases_"
+    model_config = SettingsConfigDict(env_prefix="databases_")
+    # class Config:
+    #     env_prefix = "databases_"
