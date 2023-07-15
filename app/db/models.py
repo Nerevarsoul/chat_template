@@ -54,6 +54,9 @@ class ChatRelationship(Base):  # type: ignore[valid-type, misc]
     is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     user_role: Mapped[ChatUserRole] = mapped_column(Enum(ChatUserRole), nullable=False)
 
+    chat: Mapped["Chat"] = relationship(lazy="noload")
+    user: Mapped["User"] = relationship(lazy="noload")
+
     __table_args__ = (PrimaryKeyConstraint("user_uid", "chat_id", name="chats_relationships_pk"),)
 
 
