@@ -1,4 +1,5 @@
-from pydantic import BaseSettings, RedisDsn
+from pydantic import RedisDsn
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class CacheSettings(BaseSettings):
@@ -7,5 +8,4 @@ class CacheSettings(BaseSettings):
 
     user_sid_cache_lifetime: int = 2 * 60 * 60
 
-    class Config:
-        env_prefix = "cache_"
+    model_config = SettingsConfigDict(env_prefix="cache_")

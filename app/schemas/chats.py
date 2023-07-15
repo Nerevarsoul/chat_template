@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.types import UUID4
 
 from app.db.enums import ChatState, ChatUserRole
@@ -16,7 +16,7 @@ class CreateChatData(BaseModel):
     chat_name: str
     contacts: list[UUID4]
 
-    @validator("chat_name")
+    @field_validator("chat_name")
     def chat_name_contains_only_spaces(cls, chat_name: str) -> str:
         clear_chat_name = chat_name.strip()
         if not clear_chat_name:
@@ -36,7 +36,7 @@ class CreateChatData(BaseModel):
 class CreateChatResponse(BaseModel):
     chat_id: int
     chat_name: str
-    contacts: list[UUID4] = Field(..., min_items=2)
+    contacts: list[UUID4] = Field(..., min_length=2)
 
 
 class Recipient(BaseModel):
@@ -45,8 +45,7 @@ class Recipient(BaseModel):
     state: ChatState
     user_role: ChatUserRole
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Chat(BaseModel):
@@ -54,8 +53,7 @@ class Chat(BaseModel):
     state: ChatState
     recipients: list[Recipient]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ManageRecipientsData(BaseModel):

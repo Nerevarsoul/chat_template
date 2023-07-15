@@ -62,7 +62,7 @@ async def get_chat_list(from_archive: bool, user_id: UUID4) -> list[s_chat.Chat]
 
     async with registry.session() as session:
         chat_list = await session.execute(query)
-        return [s_chat.Chat.from_orm(row) for row in chat_list.scalars()]
+        return [s_chat.Chat.model_validate(row) for row in chat_list.scalars()]
 
 
 async def get_chat_recipients(chat_id: int, user_uid: UUID4) -> list[s_chat.Recipient]:
@@ -71,7 +71,7 @@ async def get_chat_recipients(chat_id: int, user_uid: UUID4) -> list[s_chat.Reci
     )
     async with registry.session() as session:
         chat_recipients = await session.execute(query)
-        chat_recipients = [s_chat.Recipient.from_orm(row) for row in chat_recipients.scalars()]
+        chat_recipients = [s_chat.Recipient.model_validate(row) for row in chat_recipients.scalars()]
     if not chat_recipients:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     if user_uid not in [recipient.user_uid for recipient in chat_recipients]:
