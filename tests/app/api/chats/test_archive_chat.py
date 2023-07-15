@@ -43,17 +43,13 @@ async def test_archive_chat_if_user_not_in_chat(client: "AsyncClient", user_db_f
 
 
 @pytest.mark.usefixtures("clear_db")
-async def test_archive_chat_if_chat_already_archived(
-    client: "AsyncClient", user_db_f, chat_relationship_db_f, chat_db_f
-) -> None:
-    user = await user_db_f.create()
-    chat = await chat_db_f.create()
-    await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user.uid, state=ChatState.ARCHIVE)
+async def test_archive_chat_if_chat_already_archived(client: "AsyncClient", chat_relationship_db_f) -> None:
+    chat_rel = await chat_relationship_db_f.create(state=ChatState.ARCHIVE)
 
     response = await client.post(
         app.other_asgi_app.url_path_for("archive_chat"),
-        params={"chat_id": chat.id},
-        headers={config.application.user_header_name: str(user.uid)},
+        params={"chat_id": chat_rel.chat_id},
+        headers={config.application.user_header_name: str(chat_rel.user_uid)},
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -62,8 +58,8 @@ async def test_archive_chat_if_chat_already_archived(
     async with registry.session() as session:
         query = (
             select(ChatRelationship)
-            .where(ChatRelationship.chat_id == chat.id)
-            .where(ChatRelationship.user_uid == user.uid)
+            .where(ChatRelationship.chat_id == chat_rel.chat_id)
+            .where(ChatRelationship.user_uid == chat_rel.user_uid)
         )
         user_relationships = (await session.execute(query)).scalar()
 
@@ -71,15 +67,13 @@ async def test_archive_chat_if_chat_already_archived(
 
 
 @pytest.mark.usefixtures("clear_db")
-async def test_archive_chat(client: "AsyncClient", user_db_f, chat_relationship_db_f, chat_db_f) -> None:
-    user = await user_db_f.create()
-    chat = await chat_db_f.create()
-    await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user.uid)
+async def test_archive_chat(client: "AsyncClient", chat_relationship_db_f) -> None:
+    chat_rel = await chat_relationship_db_f.create()
 
     response = await client.post(
         app.other_asgi_app.url_path_for("archive_chat"),
-        headers={config.application.user_header_name: str(user.uid)},
-        params={"chat_id": chat.id},
+        headers={config.application.user_header_name: str(chat_rel.user_uid)},
+        params={"chat_id": chat_rel.chat_id},
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -88,8 +82,8 @@ async def test_archive_chat(client: "AsyncClient", user_db_f, chat_relationship_
     async with registry.session() as session:
         query = (
             select(ChatRelationship)
-            .where(ChatRelationship.chat_id == chat.id)
-            .where(ChatRelationship.user_uid == user.uid)
+            .where(ChatRelationship.chat_id == chat_rel.chat_id)
+            .where(ChatRelationship.user_uid == chat_rel.user_uid)
         )
         user_relationships = (await session.execute(query)).scalar()
 
@@ -125,17 +119,13 @@ async def test_unarchive_chat_if_user_not_in_chat(client: "AsyncClient", user_db
 
 
 @pytest.mark.usefixtures("clear_db")
-async def test_unarchive_chat_if_chat_not_archived(
-    client: "AsyncClient", user_db_f, chat_relationship_db_f, chat_db_f
-) -> None:
-    user = await user_db_f.create()
-    chat = await chat_db_f.create()
-    await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user.uid)
+async def test_unarchive_chat_if_chat_not_archived(client: "AsyncClient", chat_relationship_db_f) -> None:
+    chat_rel = await chat_relationship_db_f.create()
 
     response = await client.post(
         app.other_asgi_app.url_path_for("unarchive_chat"),
-        params={"chat_id": chat.id},
-        headers={config.application.user_header_name: str(user.uid)},
+        params={"chat_id": chat_rel.chat_id},
+        headers={config.application.user_header_name: str(chat_rel.user_uid)},
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -144,8 +134,8 @@ async def test_unarchive_chat_if_chat_not_archived(
     async with registry.session() as session:
         query = (
             select(ChatRelationship)
-            .where(ChatRelationship.chat_id == chat.id)
-            .where(ChatRelationship.user_uid == user.uid)
+            .where(ChatRelationship.chat_id == chat_rel.chat_id)
+            .where(ChatRelationship.user_uid == chat_rel.user_uid)
         )
         user_relationships = (await session.execute(query)).scalar()
 
@@ -153,15 +143,13 @@ async def test_unarchive_chat_if_chat_not_archived(
 
 
 @pytest.mark.usefixtures("clear_db")
-async def test_unarchive_chat(client: "AsyncClient", user_db_f, chat_relationship_db_f, chat_db_f) -> None:
-    user = await user_db_f.create()
-    chat = await chat_db_f.create()
-    await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user.uid, state=ChatState.ARCHIVE)
+async def test_unarchive_chat(client: "AsyncClient", chat_relationship_db_f) -> None:
+    chat_rel = await chat_relationship_db_f.create(state=ChatState.ARCHIVE)
 
     response = await client.post(
         app.other_asgi_app.url_path_for("unarchive_chat"),
-        headers={config.application.user_header_name: str(user.uid)},
-        params={"chat_id": chat.id},
+        headers={config.application.user_header_name: str(chat_rel.user_uid)},
+        params={"chat_id": chat_rel.chat_id},
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -170,8 +158,8 @@ async def test_unarchive_chat(client: "AsyncClient", user_db_f, chat_relationshi
     async with registry.session() as session:
         query = (
             select(ChatRelationship)
-            .where(ChatRelationship.chat_id == chat.id)
-            .where(ChatRelationship.user_uid == user.uid)
+            .where(ChatRelationship.chat_id == chat_rel.chat_id)
+            .where(ChatRelationship.user_uid == chat_rel.user_uid)
         )
         user_relationships = (await session.execute(query)).scalar()
 

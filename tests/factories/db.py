@@ -15,6 +15,7 @@ class UserFactory(AsyncSQLAlchemyFactory):
 
     class Meta:
         model = db.User
+        async_alchemy_get_or_create = ("uid",)
         sqlalchemy_session = lambda: registry.session
 
 
@@ -26,18 +27,22 @@ class ChatFactory(AsyncSQLAlchemyFactory):
 
     class Meta:
         model = db.Chat
+        async_alchemy_get_or_create = ("id",)
         sqlalchemy_session = lambda: registry.session
 
 
 class ChatRelationshipFactory(AsyncSQLAlchemyFactory):
-    user_uid = factory.LazyFunction(uuid.uuid4)
-    chat_id = factory.Faker("pyint")
+    user_uid = factory.SelfAttribute("user.uid")
+    chat_id = factory.SelfAttribute("chat.id")
     chat_name = factory.Faker("pystr", min_chars=10, max_chars=30)
     state = ChatState.ACTIVE
     last_read_message_id = None
     unread_counter = 0
     is_pinned = False
     user_role = ChatUserRole.USER
+
+    chat = factory.SubFactory(ChatFactory)
+    user = factory.SubFactory(UserFactory)
 
     class Meta:
         model = db.ChatRelationship
