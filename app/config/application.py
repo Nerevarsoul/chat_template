@@ -1,6 +1,7 @@
-from typing import Any, Optional
+from typing import Optional
 
-from pydantic import BaseSettings, validator
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class AppSettings(BaseSettings):
@@ -16,9 +17,8 @@ class AppSettings(BaseSettings):
 
     user_header_name: str = "user-id"
 
-    @validator("version", always=True)
+    @field_validator("version", mode="before")
     def version_validator(cls, value: Optional[str]) -> str:
         return value or "0.1.0"
 
-    class Config:
-        env_prefix = "app_"
+    model_config = SettingsConfigDict(env_prefix="app_")

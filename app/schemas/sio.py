@@ -1,6 +1,6 @@
 import enum
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from pydantic.types import UUID4
 
 
@@ -14,7 +14,7 @@ class NewMessage(BaseModel):
     client_id: UUID4
     text: str
 
-    @validator("text")
+    @field_validator("text")
     def new_message_contains_only_spaces(cls, text: str) -> str:
         clear_text = text.strip()
         if not clear_text:

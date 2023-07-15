@@ -35,7 +35,7 @@ async def save_message(message_for_saving: s_sio.NewMessage) -> bool:
         query = (
             insert(db.Message)
             .values(
-                **message_for_saving.dict(),
+                **message_for_saving.model_dump(),
                 search_text=func.to_tsvector(coalesce(message_for_saving.text.lower(), "")),
                 type_=MessageType.FROM_USER,
             )
