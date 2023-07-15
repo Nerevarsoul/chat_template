@@ -52,6 +52,7 @@ class ChatRelationship(Base):  # type: ignore[valid-type, misc]
     last_read_message_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
     unread_counter: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    time_pinned: Mapped[datetime] = mapped_column(DateTime, onupdate=func.now(), nullable=True)
     user_role: Mapped[ChatUserRole] = mapped_column(Enum(ChatUserRole), nullable=False)
 
     __table_args__ = (PrimaryKeyConstraint("user_uid", "chat_id", name="chats_relationships_pk"),)

@@ -47,3 +47,13 @@ async def archive_chat(chat_id: int, user_uid: UUID4 = Depends(get_current_user)
 @router.post("/unarchive", response_model=s_chat.ChatApiResponse, status_code=status.HTTP_200_OK)
 async def unarchive_chat(chat_id: int, user_uid: UUID4 = Depends(get_current_user)) -> s_chat.ChatApiResponse:
     return await chats_service.unarchive_chat(chat_id, user_uid)
+
+
+@router.post("/pin", response_model=s_chat.ChatApiResponse, status_code=status.HTTP_200_OK)
+async def pin_chat(chat_id: int, user_uid: UUID4 = Depends(get_current_user)) -> s_chat.ChatApiResponse:
+    return await chats_service.pin_chat(chat_id, user_uid)
+
+
+@router.post("/unpin", response_model=s_chat.ChatApiResponse, status_code=status.HTTP_200_OK)
+async def unpin_chat(chat_id: int, user_uid: UUID4 = Depends(get_current_user)) -> s_chat.ChatApiResponse:
+    return await chats_service.unpin_chat(chat_id, user_uid)
