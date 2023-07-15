@@ -8,6 +8,3 @@ class SocketioSettings(BaseSettings):
     ping_interval: Seconds = 10
 
     model_config = SettingsConfigDict(env_prefix="socketio_")
-
-    # class Config:
-    #     env_prefix = "socketio_"

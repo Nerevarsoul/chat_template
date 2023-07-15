@@ -19,16 +19,34 @@ if TYPE_CHECKING:
 async def test_create_chat_without_chat_name(user_db_f, client: "AsyncClient") -> None:
     user1 = await user_db_f.create()
     user2 = await user_db_f.create()
+    response = await client.post(
+        app.other_asgi_app.url_path_for("create_chat"),
+        json={"contacts": [str(user1.uid), str(user2.uid)]},
+        headers={config.application.user_header_name: str(user1.uid)},
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"detail": {"chat_name": "Field required"}}
+
+    async with registry.session() as session:
+        query = select(func.count()).select_from(Chat)
+        chats_quantity = (await session.execute(query)).scalar()
+    assert chats_quantity == 0
+
+
+@pytest.mark.usefixtures("clear_db")
+async def test_create_chat_if_chat_name_is_empty(user_db_f, client: "AsyncClient") -> None:
+    user1 = await user_db_f.create()
+    user2 = await user_db_f.create()
     request_body = CreateChatDataFactory.build(
         factory_use_construct=True, chat_name="", contacts=[user1.uid, user2.uid]
     )
     response = await client.post(
         app.other_asgi_app.url_path_for("create_chat"),
-        content=request_body.json(),
+        content=request_body.model_dump_json(),
         headers={config.application.user_header_name: str(user1.uid)},
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json() == {"detail": {"chat_name": "chat name must contain characters"}}
+    assert response.json() == {"detail": {"chat_name": "Value error, chat name must contain characters"}}
 
     async with registry.session() as session:
         query = select(func.count()).select_from(Chat)
@@ -45,11 +63,11 @@ async def test_create_chat_with_chat_name_is_none(user_db_f, client: "AsyncClien
     )
     response = await client.post(
         app.other_asgi_app.url_path_for("create_chat"),
-        content=request_body.json(),
+        content=request_body.model_dump_json(),
         headers={config.application.user_header_name: str(user1.uid)},
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json() == {"detail": {"chat_name": "none is not an allowed value"}}
+    assert response.json() == {"detail": {"chat_name": "Input should be a valid string"}}
 
     async with registry.session() as session:
         query = select(func.count()).select_from(Chat)
@@ -63,7 +81,7 @@ async def test_create_chat_without_contacts_list(user_db_f, client: "AsyncClient
     request_body = CreateChatDataFactory.build(factory_use_construct=True, contacts=[])
     response = await client.post(
         app.other_asgi_app.url_path_for("create_chat"),
-        content=request_body.json(),
+        content=request_body.model_dump_json(),
         headers={config.application.user_header_name: str(user.uid)},
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -81,7 +99,7 @@ async def test_create_chat_with_one_contact(user_db_f, client: "AsyncClient") ->
     request_body = CreateChatDataFactory.build(contacts=[user.uid])
     response = await client.post(
         app.other_asgi_app.url_path_for("create_chat"),
-        content=request_body.json(),
+        content=request_body.model_dump_json(),
         headers={config.application.user_header_name: str(user.uid)},
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -100,7 +118,7 @@ async def test_create_chat_with_identical_users(user_db_f, client: "AsyncClient"
     request_body = CreateChatDataFactory.build(factory_use_construct=True, contacts=[user2.uid, user2.uid])
     response = await client.post(
         app.other_asgi_app.url_path_for("create_chat"),
-        content=request_body.json(),
+        content=request_body.model_dump_json(),
         headers={config.application.user_header_name: str(user1.uid)},
     )
     assert response.status_code == status.HTTP_201_CREATED
@@ -122,7 +140,7 @@ async def test_create_chat(user_db_f, client: "AsyncClient") -> None:
     request_body = CreateChatDataFactory.build(contacts=[user2.uid])
     response = await client.post(
         app.other_asgi_app.url_path_for("create_chat"),
-        content=request_body.json(),
+        content=request_body.model_dump_json(),
         headers={config.application.user_header_name: str(user1.uid)},
     )
     assert response.status_code == status.HTTP_201_CREATED

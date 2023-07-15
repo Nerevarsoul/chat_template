@@ -9,5 +9,3 @@ class CacheSettings(BaseSettings):
     user_sid_cache_lifetime: int = 2 * 60 * 60
 
     model_config = SettingsConfigDict(env_prefix="cache_")
-    # class Config:
-    #     env_prefix = "cache_"

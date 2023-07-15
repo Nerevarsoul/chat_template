@@ -1,5 +1,5 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic.networks import PostgresDsn
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class DBSettings(BaseSettings):
@@ -11,5 +11,3 @@ class DBSettings(BaseSettings):
     dsn: PostgresDsn = ""  # type: ignore[assignment]
 
     model_config = SettingsConfigDict(env_prefix="databases_")
-    # class Config:
-    #     env_prefix = "databases_"

@@ -25,7 +25,7 @@ async def test_delete_recipients_without_chat_id(user_db_f, client: "AsyncClient
         headers={config.application.user_header_name: str(user_1.uid)},
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json() == {"detail": {"chat_id": "field required"}}
+    assert response.json() == {"detail": {"chat_id": "Field required"}}
 
 
 @pytest.mark.usefixtures("clear_db")
@@ -38,7 +38,7 @@ async def test_delete_recipients_without_contacts(user_db_f, chat_db_f, client: 
         headers={config.application.user_header_name: str(user.uid)},
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json() == {"detail": {"contacts": "field required"}}
+    assert response.json() == {"detail": {"contacts": "Field required"}}
 
 
 @pytest.mark.usefixtures("clear_db")
