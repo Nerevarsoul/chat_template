@@ -28,42 +28,38 @@ async def test_get_chat_list_empty(client: "AsyncClient", user_db_f) -> None:
 
 @pytest.mark.usefixtures("clear_db")
 async def test_get_chat_list(client: "AsyncClient", user_db_f, chat_db_f, chat_relationship_db_f) -> None:
-    user_uid = str(uuid.uuid4())
-    await user_db_f.create(uid=user_uid)
+    user = await user_db_f.create()
 
-    await generate_chat_history(user_uid, user_db_f, chat_db_f, chat_relationship_db_f, 5)
+    await generate_chat_history(str(user.uid), chat_relationship_db_f, 5)
 
     user_2 = await user_db_f.create()
-    await generate_chat_history(str(user_2.uid), user_db_f, chat_db_f, chat_relationship_db_f, 1)
-
-    response = await client.get(
-        app.other_asgi_app.url_path_for("get_chat_list"), headers={config.application.user_header_name: user_uid}
-    )
-
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) == 5
-    for chat in response.json():
-        assert len(chat["recipients"]) == 2
-        assert user_uid in [recipient["user_uid"] for recipient in chat["recipients"]]
-
-
-@pytest.mark.usefixtures("clear_db")
-async def test_get_unarchive_chat_list(client: "AsyncClient", user_db_f, chat_db_f, chat_relationship_db_f) -> None:
-    user = await user_db_f.create()
-    chat_1 = await chat_db_f.create()
-    chat_2 = await chat_db_f.create()
-    chat_3 = await chat_db_f.create()
-    await chat_relationship_db_f.create(chat_id=chat_1.id, user_uid=user.uid)
-    await chat_relationship_db_f.create(chat_id=chat_2.id, user_uid=user.uid)
-    await chat_relationship_db_f.create(chat_id=chat_3.id, user_uid=user.uid, state=ChatState.ARCHIVE)
-    active_chat_ids = [chat_1.id, chat_2.id]
+    await generate_chat_history(str(user_2.uid), chat_relationship_db_f, 1)
 
     response = await client.get(
         app.other_asgi_app.url_path_for("get_chat_list"), headers={config.application.user_header_name: str(user.uid)}
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) == 2
+    assert len(response.json()) == 5, response.json()
+    for chat in response.json():
+        assert len(chat["recipients"]) == 2
+        assert str(user.uid) in [recipient["user_uid"] for recipient in chat["recipients"]]
+
+
+@pytest.mark.usefixtures("clear_db")
+async def test_get_chat_list_check_filter_archive(client: "AsyncClient", chat_relationship_db_f) -> None:
+    chat_rel1 = await chat_relationship_db_f.create()
+    user = chat_rel1.user
+    chat_rel2 = await chat_relationship_db_f.create(user__uid=user.uid)
+    await chat_relationship_db_f.create(user__uid=user.uid, state=ChatState.ARCHIVE)
+    active_chat_ids = [chat_rel1.chat_id, chat_rel2.chat_id]
+
+    response = await client.get(
+        app.other_asgi_app.url_path_for("get_chat_list"), headers={config.application.user_header_name: str(user.uid)}
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()) == 2, response.json()
 
     for chat in response.json():
         assert chat["id"] in active_chat_ids
@@ -74,15 +70,12 @@ async def test_get_unarchive_chat_list(client: "AsyncClient", user_db_f, chat_db
 
 
 @pytest.mark.usefixtures("clear_db")
-async def test_get_archive_chat_list(client: "AsyncClient", user_db_f, chat_db_f, chat_relationship_db_f) -> None:
-    user = await user_db_f.create()
-    chat_1 = await chat_db_f.create()
-    chat_2 = await chat_db_f.create()
-    chat_3 = await chat_db_f.create()
-    await chat_relationship_db_f.create(chat_id=chat_1.id, user_uid=user.uid, state=ChatState.ARCHIVE)
-    await chat_relationship_db_f.create(chat_id=chat_2.id, user_uid=user.uid, state=ChatState.ARCHIVE)
-    await chat_relationship_db_f.create(chat_id=chat_3.id, user_uid=user.uid)
-    archived_chat_ids = [chat_1.id, chat_2.id]
+async def test_get_archive_chat_list(client: "AsyncClient", chat_relationship_db_f) -> None:
+    chat_rel1 = await chat_relationship_db_f.create(state=ChatState.ARCHIVE)
+    user = chat_rel1.user
+    chat_rel2 = await chat_relationship_db_f.create(user__uid=user.uid, state=ChatState.ARCHIVE)
+    await chat_relationship_db_f.create(user__uid=user.uid)
+    archived_chat_ids = [chat_rel1.chat_id, chat_rel2.chat_id]
 
     response = await client.get(
         app.other_asgi_app.url_path_for("get_chat_list"),
@@ -91,7 +84,7 @@ async def test_get_archive_chat_list(client: "AsyncClient", user_db_f, chat_db_f
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) == 2
+    assert len(response.json()) == 2, response.json()
 
     for chat in response.json():
         assert chat["id"] in archived_chat_ids
