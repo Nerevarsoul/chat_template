@@ -44,16 +44,15 @@ async def test_pin_chat_if_user_not_in_chat(client: "AsyncClient", user_db_f, ch
 
 @pytest.mark.usefixtures("clear_db")
 async def test_archive_chat_if_chat_already_pined(
-    client: "AsyncClient", user_db_f, chat_relationship_db_f, chat_db_f
+    client: "AsyncClient",
+    chat_relationship_db_f,
 ) -> None:
-    user = await user_db_f.create()
-    chat = await chat_db_f.create()
-    await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user.uid, is_pinned=True)
+    chat_rel = await chat_relationship_db_f.create(is_pinned=True)
 
     response = await client.post(
         app.other_asgi_app.url_path_for("pin_chat"),
-        params={"chat_id": chat.id},
-        headers={config.application.user_header_name: str(user.uid)},
+        params={"chat_id": chat_rel.chat_id},
+        headers={config.application.user_header_name: str(chat_rel.user_uid)},
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -62,8 +61,8 @@ async def test_archive_chat_if_chat_already_pined(
     async with registry.session() as session:
         query = (
             select(ChatRelationship)
-            .where(ChatRelationship.chat_id == chat.id)
-            .where(ChatRelationship.user_uid == user.uid)
+            .where(ChatRelationship.chat_id == chat_rel.chat_id)
+            .where(ChatRelationship.user_uid == chat_rel.user_uid)
         )
         user_relationships = (await session.execute(query)).scalar()
 
@@ -72,15 +71,13 @@ async def test_archive_chat_if_chat_already_pined(
 
 
 @pytest.mark.usefixtures("clear_db")
-async def test_pin_chat(client: "AsyncClient", user_db_f, chat_relationship_db_f, chat_db_f) -> None:
-    user = await user_db_f.create()
-    chat = await chat_db_f.create()
-    await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user.uid)
+async def test_pin_chat(client: "AsyncClient", chat_relationship_db_f) -> None:
+    chat_rel = await chat_relationship_db_f.create()
 
     response = await client.post(
         app.other_asgi_app.url_path_for("pin_chat"),
-        headers={config.application.user_header_name: str(user.uid)},
-        params={"chat_id": chat.id},
+        headers={config.application.user_header_name: str(chat_rel.user_uid)},
+        params={"chat_id": chat_rel.chat_id},
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -89,8 +86,8 @@ async def test_pin_chat(client: "AsyncClient", user_db_f, chat_relationship_db_f
     async with registry.session() as session:
         query = (
             select(ChatRelationship)
-            .where(ChatRelationship.chat_id == chat.id)
-            .where(ChatRelationship.user_uid == user.uid)
+            .where(ChatRelationship.chat_id == chat_rel.chat_id)
+            .where(ChatRelationship.user_uid == chat_rel.user_uid)
         )
         user_relationships = (await session.execute(query)).scalar()
 
@@ -127,17 +124,13 @@ async def test_unpin_chat_if_user_not_in_chat(client: "AsyncClient", user_db_f, 
 
 
 @pytest.mark.usefixtures("clear_db")
-async def test_unpin_chat_if_chat_not_pined(
-    client: "AsyncClient", user_db_f, chat_relationship_db_f, chat_db_f
-) -> None:
-    user = await user_db_f.create()
-    chat = await chat_db_f.create()
-    await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user.uid)
+async def test_unpin_chat_if_chat_not_pined(client: "AsyncClient", chat_relationship_db_f) -> None:
+    chat_rel = await chat_relationship_db_f.create()
 
     response = await client.post(
         app.other_asgi_app.url_path_for("unpin_chat"),
-        params={"chat_id": chat.id},
-        headers={config.application.user_header_name: str(user.uid)},
+        params={"chat_id": chat_rel.chat_id},
+        headers={config.application.user_header_name: str(chat_rel.user_uid)},
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -146,8 +139,8 @@ async def test_unpin_chat_if_chat_not_pined(
     async with registry.session() as session:
         query = (
             select(ChatRelationship)
-            .where(ChatRelationship.chat_id == chat.id)
-            .where(ChatRelationship.user_uid == user.uid)
+            .where(ChatRelationship.chat_id == chat_rel.chat_id)
+            .where(ChatRelationship.user_uid == chat_rel.user_uid)
         )
         user_relationships = (await session.execute(query)).scalar()
 
@@ -157,14 +150,12 @@ async def test_unpin_chat_if_chat_not_pined(
 
 @pytest.mark.usefixtures("clear_db")
 async def test_unpin_chat(client: "AsyncClient", user_db_f, chat_relationship_db_f, chat_db_f) -> None:
-    user = await user_db_f.create()
-    chat = await chat_db_f.create()
-    await chat_relationship_db_f.create(chat_id=chat.id, user_uid=user.uid, is_pinned=True)
+    chat_rel = await chat_relationship_db_f.create(is_pinned=True)
 
     response = await client.post(
         app.other_asgi_app.url_path_for("unpin_chat"),
-        headers={config.application.user_header_name: str(user.uid)},
-        params={"chat_id": chat.id},
+        headers={config.application.user_header_name: str(chat_rel.user_uid)},
+        params={"chat_id": chat_rel.chat_id},
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -173,8 +164,8 @@ async def test_unpin_chat(client: "AsyncClient", user_db_f, chat_relationship_db
     async with registry.session() as session:
         query = (
             select(ChatRelationship)
-            .where(ChatRelationship.chat_id == chat.id)
-            .where(ChatRelationship.user_uid == user.uid)
+            .where(ChatRelationship.chat_id == chat_rel.chat_id)
+            .where(ChatRelationship.user_uid == chat_rel.user_uid)
         )
         user_relationships = (await session.execute(query)).scalar()
 
