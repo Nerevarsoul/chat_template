@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import HTTPException, status
 from pydantic.types import UUID4
 from sqlalchemy import and_, select, update
@@ -184,7 +186,7 @@ async def pin_chat(chat_id: int, user_uid: UUID4) -> s_chat.ChatApiResponse:
     async with registry.session() as session:
         update_query = (
             update(db.ChatRelationship)
-            .values(is_pinned=True)
+            .values(time_pinned=datetime.now())
             .where(
                 and_(
                     db.ChatRelationship.user_uid == user_uid,
@@ -204,7 +206,7 @@ async def unpin_chat(chat_id: int, user_uid: UUID4) -> s_chat.ChatApiResponse:
     async with registry.session() as session:
         update_query = (
             update(db.ChatRelationship)
-            .values({"is_pinned": False, "time_pinned": None})
+            .values(time_pinned=None)
             .where(
                 and_(
                     db.ChatRelationship.user_uid == user_uid,

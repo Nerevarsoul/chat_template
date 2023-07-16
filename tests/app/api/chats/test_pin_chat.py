@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 import pytest
@@ -43,12 +44,13 @@ async def test_pin_chat_if_user_not_in_chat(client: "AsyncClient", user_db_f, ch
 
 
 @pytest.mark.usefixtures("clear_db")
-async def test_archive_chat_if_chat_already_pined(
+async def test_pin_chat_if_chat_already_pined(
     client: "AsyncClient",
     chat_relationship_db_f,
 ) -> None:
-    chat_rel = await chat_relationship_db_f.create(is_pinned=True)
+    chat_rel = await chat_relationship_db_f.create(time_pinned=datetime.now())
 
+    response_time = datetime.now()
     response = await client.post(
         app.other_asgi_app.url_path_for("pin_chat"),
         params={"chat_id": chat_rel.chat_id},
@@ -66,14 +68,15 @@ async def test_archive_chat_if_chat_already_pined(
         )
         user_relationships = (await session.execute(query)).scalar()
 
-    assert user_relationships.is_pinned == True
-    assert user_relationships.time_pinned is not None
+    assert user_relationships.time_pinned > response_time
+    assert user_relationships.time_pinned < datetime.now()
 
 
 @pytest.mark.usefixtures("clear_db")
 async def test_pin_chat(client: "AsyncClient", chat_relationship_db_f) -> None:
     chat_rel = await chat_relationship_db_f.create()
 
+    response_time = datetime.now()
     response = await client.post(
         app.other_asgi_app.url_path_for("pin_chat"),
         headers={config.application.user_header_name: str(chat_rel.user_uid)},
@@ -91,8 +94,8 @@ async def test_pin_chat(client: "AsyncClient", chat_relationship_db_f) -> None:
         )
         user_relationships = (await session.execute(query)).scalar()
 
-    assert user_relationships.is_pinned == True
-    assert user_relationships.time_pinned is not None
+    assert user_relationships.time_pinned > response_time
+    assert user_relationships.time_pinned < datetime.now()
 
 
 # Tests for unpin_chat router
@@ -144,13 +147,12 @@ async def test_unpin_chat_if_chat_not_pined(client: "AsyncClient", chat_relation
         )
         user_relationships = (await session.execute(query)).scalar()
 
-    assert user_relationships.is_pinned == False
     assert user_relationships.time_pinned is None
 
 
 @pytest.mark.usefixtures("clear_db")
 async def test_unpin_chat(client: "AsyncClient", user_db_f, chat_relationship_db_f, chat_db_f) -> None:
-    chat_rel = await chat_relationship_db_f.create(is_pinned=True)
+    chat_rel = await chat_relationship_db_f.create(time_pinned=datetime.now())
 
     response = await client.post(
         app.other_asgi_app.url_path_for("unpin_chat"),
@@ -169,5 +171,4 @@ async def test_unpin_chat(client: "AsyncClient", user_db_f, chat_relationship_db
         )
         user_relationships = (await session.execute(query)).scalar()
 
-    assert user_relationships.is_pinned == False
     assert user_relationships.time_pinned is None
