@@ -186,7 +186,7 @@ async def pin_chat(chat_id: int, user_uid: UUID4) -> s_chat.ChatApiResponse:
     async with registry.session() as session:
         update_query = (
             update(db.ChatRelationship)
-            .values(time_pinned=datetime.now())
+            .values(time_pinned=datetime.utcnow())
             .where(
                 and_(
                     db.ChatRelationship.user_uid == user_uid,

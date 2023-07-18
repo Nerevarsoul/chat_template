@@ -10,6 +10,7 @@ from app.db.enums import ChatState
 from app.db.models import ChatRelationship
 from app.db.registry import registry
 from app.main import app
+from tests.factories.schemas import SuccessfulChatApiResponseFactory
 
 if TYPE_CHECKING:
     from httpx import AsyncClient
@@ -50,7 +51,7 @@ async def test_pin_chat_if_chat_already_pined(
 ) -> None:
     chat_rel = await chat_relationship_db_f.create(time_pinned=datetime.now())
 
-    response_time = datetime.now()
+    response_time = datetime.utcnow()
     response = await client.post(
         app.other_asgi_app.url_path_for("pin_chat"),
         params={"chat_id": chat_rel.chat_id},
@@ -58,7 +59,7 @@ async def test_pin_chat_if_chat_already_pined(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"result": {"success": True}}
+    assert response.json() == SuccessfulChatApiResponseFactory.build().model_dump()
 
     async with registry.session() as session:
         query = (
@@ -69,14 +70,14 @@ async def test_pin_chat_if_chat_already_pined(
         user_relationships = (await session.execute(query)).scalar()
 
     assert user_relationships.time_pinned > response_time
-    assert user_relationships.time_pinned < datetime.now()
+    assert user_relationships.time_pinned < datetime.utcnow()
 
 
 @pytest.mark.usefixtures("clear_db")
 async def test_pin_chat(client: "AsyncClient", chat_relationship_db_f) -> None:
     chat_rel = await chat_relationship_db_f.create()
 
-    response_time = datetime.now()
+    response_time = datetime.utcnow()
     response = await client.post(
         app.other_asgi_app.url_path_for("pin_chat"),
         headers={config.application.user_header_name: str(chat_rel.user_uid)},
@@ -84,7 +85,7 @@ async def test_pin_chat(client: "AsyncClient", chat_relationship_db_f) -> None:
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"result": {"success": True}}
+    assert response.json() == SuccessfulChatApiResponseFactory.build().model_dump()
 
     async with registry.session() as session:
         query = (
@@ -95,7 +96,7 @@ async def test_pin_chat(client: "AsyncClient", chat_relationship_db_f) -> None:
         user_relationships = (await session.execute(query)).scalar()
 
     assert user_relationships.time_pinned > response_time
-    assert user_relationships.time_pinned < datetime.now()
+    assert user_relationships.time_pinned < datetime.utcnow()
 
 
 # Tests for unpin_chat router
@@ -137,7 +138,7 @@ async def test_unpin_chat_if_chat_not_pined(client: "AsyncClient", chat_relation
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"result": {"success": True}}
+    assert response.json() == SuccessfulChatApiResponseFactory.build().model_dump()
 
     async with registry.session() as session:
         query = (
@@ -161,7 +162,7 @@ async def test_unpin_chat(client: "AsyncClient", user_db_f, chat_relationship_db
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"result": {"success": True}}
+    assert response.json() == SuccessfulChatApiResponseFactory.build().model_dump()
 
     async with registry.session() as session:
         query = (
