@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import HTTPException, status
 from pydantic.types import UUID4
 from sqlalchemy import and_, select, update
@@ -165,6 +167,46 @@ async def unarchive_chat(chat_id: int, user_uid: UUID4) -> s_chat.ChatApiRespons
         update_query = (
             update(db.ChatRelationship)
             .values(state=ChatState.ACTIVE)
+            .where(
+                and_(
+                    db.ChatRelationship.user_uid == user_uid,
+                    db.ChatRelationship.chat_id == chat_id,
+                )
+            )
+        )
+        result = await session.execute(update_query)
+        if not result.rowcount:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        await session.commit()
+
+    return s_chat.ChatApiResponse(result=s_chat.Result(success=True))
+
+
+async def pin_chat(chat_id: int, user_uid: UUID4) -> s_chat.ChatApiResponse:
+    async with registry.session() as session:
+        update_query = (
+            update(db.ChatRelationship)
+            .values(time_pinned=datetime.utcnow())
+            .where(
+                and_(
+                    db.ChatRelationship.user_uid == user_uid,
+                    db.ChatRelationship.chat_id == chat_id,
+                )
+            )
+        )
+        result = await session.execute(update_query)
+        if not result.rowcount:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        await session.commit()
+
+    return s_chat.ChatApiResponse(result=s_chat.Result(success=True))
+
+
+async def unpin_chat(chat_id: int, user_uid: UUID4) -> s_chat.ChatApiResponse:
+    async with registry.session() as session:
+        update_query = (
+            update(db.ChatRelationship)
+            .values(time_pinned=None)
             .where(
                 and_(
                     db.ChatRelationship.user_uid == user_uid,

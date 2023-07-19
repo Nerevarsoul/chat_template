@@ -51,7 +51,7 @@ class ChatRelationship(Base):  # type: ignore[valid-type, misc]
     state: Mapped[ChatState] = mapped_column(Enum(ChatState), nullable=False)
     last_read_message_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
     unread_counter: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    time_pinned: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     user_role: Mapped[ChatUserRole] = mapped_column(Enum(ChatUserRole), nullable=False)
 
     chat: Mapped["Chat"] = relationship(lazy="noload")

@@ -38,7 +38,7 @@ class ChatRelationshipFactory(AsyncSQLAlchemyFactory):
     state = ChatState.ACTIVE
     last_read_message_id = None
     unread_counter = 0
-    is_pinned = False
+    time_pinned = None
     user_role = ChatUserRole.USER
 
     chat = factory.SubFactory(ChatFactory)
