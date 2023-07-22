@@ -2,7 +2,7 @@ from datetime import datetime
 
 from fastapi import HTTPException, status
 from pydantic.types import UUID4
-from sqlalchemy import and_, select, update
+from sqlalchemy import and_, desc, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
@@ -52,7 +52,7 @@ async def get_chat_list(from_archive: bool, user_id: UUID4) -> list[s_chat.Chat]
         select(db.ChatRelationship.chat_id)
         .select_from(db.ChatRelationship)
         .where(condition)
-        .order_by(db.ChatRelationship.chat_id)
+        .order_by(db.ChatRelationship.time_pinned, db.ChatRelationship.chat_id)
         .subquery("chat_subquery")
     )
 
