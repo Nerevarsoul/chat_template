@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 import pytest
@@ -92,3 +93,23 @@ async def test_get_archive_chat_list(client: "AsyncClient", chat_relationship_db
         for recipient in chat["recipients"]:
             if recipient["user_uid"] == str(user.uid):
                 assert recipient["state"] == ChatState.ARCHIVE
+
+
+@pytest.mark.usefixtures("clear_db")
+async def test_get_chat_list_with_pinned_chats(client: "AsyncClient", chat_relationship_db_f) -> None:
+    chat_rel1 = await chat_relationship_db_f.create(time_pinned=datetime.utcnow())
+    user = chat_rel1.user
+    chat_rel2 = await chat_relationship_db_f.create(user__uid=user.uid)
+    chat_rel3 = await chat_relationship_db_f.create(user__uid=user.uid, time_pinned=datetime.utcnow())
+    expected_chat_list = [chat_rel1, chat_rel3, chat_rel2]
+
+    response = await client.get(
+        app.other_asgi_app.url_path_for("get_chat_list"),
+        headers={config.application.user_header_name: str(user.uid)},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()) == 3, response.json()
+
+    for chat, exp_chat in zip(response.json(), expected_chat_list):
+        assert chat["id"] == exp_chat.chat_id

@@ -49,7 +49,7 @@ async def test_pin_chat_if_chat_already_pined(
     client: "AsyncClient",
     chat_relationship_db_f,
 ) -> None:
-    chat_rel = await chat_relationship_db_f.create(time_pinned=datetime.now())
+    chat_rel = await chat_relationship_db_f.create(time_pinned=datetime.utcnow())
 
     response_time = datetime.utcnow()
     response = await client.post(
@@ -153,7 +153,7 @@ async def test_unpin_chat_if_chat_not_pined(client: "AsyncClient", chat_relation
 
 @pytest.mark.usefixtures("clear_db")
 async def test_unpin_chat(client: "AsyncClient", user_db_f, chat_relationship_db_f, chat_db_f) -> None:
-    chat_rel = await chat_relationship_db_f.create(time_pinned=datetime.now())
+    chat_rel = await chat_relationship_db_f.create(time_pinned=datetime.utcnow())
 
     response = await client.post(
         app.other_asgi_app.url_path_for("unpin_chat"),
