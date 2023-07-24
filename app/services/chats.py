@@ -2,9 +2,9 @@ from datetime import datetime
 
 from fastapi import HTTPException, status
 from pydantic.types import UUID4
-from sqlalchemy import and_, desc, select, update
+from sqlalchemy import and_, select, update
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app import db
 from app.db.enums import ChatState, ChatUserRole
@@ -58,7 +58,7 @@ async def get_chat_list(from_archive: bool, user_id: UUID4) -> list[s_chat.Chat]
 
     query = (
         select(db.Chat)
-        .options(selectinload(db.Chat.recipients))
+        .options(selectinload(db.Chat.recipients).options(joinedload(db.ChatRelationship.user)))
         .join(chat_subquery, db.Chat.id == chat_subquery.c.chat_id)
     )
 
