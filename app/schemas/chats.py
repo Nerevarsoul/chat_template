@@ -1,8 +1,10 @@
+from datetime import datetime
+
 from fastapi import HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.types import UUID4
 
-from app.db.enums import ChatState, ChatUserRole
+from app.db.enums import ChatState, ChatUserRole, MessageType
 
 __all__ = (
     "CreateChatData",
@@ -67,3 +69,22 @@ class Result(BaseModel):
 
 class ChatApiResponse(BaseModel):
     result: Result
+
+
+class Message(BaseModel):
+    id: int
+    user_uid: UUID4
+    chat_id: int
+    client_id: UUID4
+    text: str
+    search_text: str
+    type_: MessageType
+    quoted_message: None
+    mentions: None
+    links: None
+    original_id: None
+    original_chat_id: None
+    time_created: datetime
+    time_updated: None
+
+    model_config = ConfigDict(from_attributes=True)
