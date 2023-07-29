@@ -41,11 +41,18 @@ class CreateChatResponse(BaseModel):
     contacts: list[UUID4] = Field(..., min_length=2)
 
 
+class User(BaseModel):
+    name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class Recipient(BaseModel):
     user_uid: UUID4
     chat_name: str
     state: ChatState
     user_role: ChatUserRole
+    user: None | User = None
 
     model_config = ConfigDict(from_attributes=True)
 

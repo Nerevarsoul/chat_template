@@ -31,10 +31,10 @@ async def test_get_chat_list_empty(client: "AsyncClient", user_db_f) -> None:
 async def test_get_chat_list(client: "AsyncClient", user_db_f, chat_db_f, chat_relationship_db_f) -> None:
     user = await user_db_f.create()
 
-    await generate_chat_history(str(user.uid), chat_relationship_db_f, 5)
+    await generate_chat_history(user, chat_relationship_db_f, 5)
 
     user_2 = await user_db_f.create()
-    await generate_chat_history(str(user_2.uid), chat_relationship_db_f, 1)
+    await generate_chat_history(user_2, chat_relationship_db_f, 1)
 
     response = await client.get(
         app.other_asgi_app.url_path_for("get_chat_list"), headers={config.application.user_header_name: str(user.uid)}
@@ -45,6 +45,7 @@ async def test_get_chat_list(client: "AsyncClient", user_db_f, chat_db_f, chat_r
     for chat in response.json():
         assert len(chat["recipients"]) == 2
         assert str(user.uid) in [recipient["user_uid"] for recipient in chat["recipients"]]
+        assert user.name in [recipient["user"]["name"] for recipient in chat["recipients"]]
 
 
 @pytest.mark.usefixtures("clear_db")
