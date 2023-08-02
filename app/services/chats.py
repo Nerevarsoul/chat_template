@@ -226,9 +226,7 @@ async def get_message_history(chat_id: int, user_uid: UUID4, message_id: int, pa
     condition = db.Message.chat_id == chat_id
 
     if message_id:
-        condition &= db.Message.id >= message_id
-    else:
-        condition &= db.Message.id > message_id
+        condition &= db.Message.id <= message_id
 
     query = (
         select(db.Message)
@@ -236,6 +234,7 @@ async def get_message_history(chat_id: int, user_uid: UUID4, message_id: int, pa
             db.ChatRelationship, and_(db.ChatRelationship.chat_id == chat_id, db.ChatRelationship.user_uid == user_uid)
         )
         .where(condition)
+        .order_by(db.Message.id.desc())
         .limit(page_size)
     )
 
