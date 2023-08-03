@@ -23,6 +23,7 @@ if TYPE_CHECKING:
         ("unarchive_chat", "POST"),
         ("pin_chat", "POST"),
         ("unpin_chat", "POST"),
+        ("get_message_history", "GET"),
     ],
 )
 async def test_request_without_user_id(client: "AsyncClient", view_name, method: str) -> None:
@@ -44,6 +45,7 @@ async def test_request_without_user_id(client: "AsyncClient", view_name, method:
         ("unarchive_chat", "POST"),
         ("pin_chat", "POST"),
         ("unpin_chat", "POST"),
+        ("get_message_history", "GET"),
     ],
 )
 async def test_request_with_user_not_exist(client: "AsyncClient", view_name: str, method: str) -> None:

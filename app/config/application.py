@@ -16,6 +16,7 @@ class AppSettings(BaseSettings):
     log_sql_query_time: bool = True
 
     user_header_name: str = "user-id"
+    message_history_page_size: int = 20
 
     @field_validator("version", mode="before")
     def version_validator(cls, value: Optional[str]) -> str:

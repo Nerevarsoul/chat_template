@@ -220,3 +220,24 @@ async def unpin_chat(chat_id: int, user_uid: UUID4) -> s_chat.ChatApiResponse:
         await session.commit()
 
     return s_chat.ChatApiResponse(result=s_chat.Result(success=True))
+
+
+async def get_message_history(chat_id: int, user_uid: UUID4, message_id: int, page_size: int) -> list[s_chat.Message]:
+    condition = db.Message.chat_id == chat_id
+
+    if message_id:
+        condition &= db.Message.id <= message_id
+
+    query = (
+        select(db.Message)
+        .join(
+            db.ChatRelationship, and_(db.ChatRelationship.chat_id == chat_id, db.ChatRelationship.user_uid == user_uid)
+        )
+        .where(condition)
+        .order_by(db.Message.id.desc())
+        .limit(page_size)
+    )
+
+    async with registry.session() as session:
+        message_history = await session.execute(query)
+        return [s_chat.Message.model_validate(row) for row in message_history.scalars()]
