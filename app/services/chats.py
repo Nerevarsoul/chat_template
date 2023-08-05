@@ -1,10 +1,12 @@
 from datetime import datetime
+from typing import Union
 
 from fastapi import HTTPException, status
 from pydantic.types import UUID4
-from sqlalchemy import and_, select, update
+from sqlalchemy import UnaryExpression, and_, select, update
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import InstrumentedAttribute, joinedload, selectinload
+from sqlalchemy.sql.expression import ColumnElement
 
 from app import db
 from app.db.enums import ChatState, ChatUserRole
@@ -222,11 +224,33 @@ async def unpin_chat(chat_id: int, user_uid: UUID4) -> s_chat.ChatApiResponse:
     return s_chat.ChatApiResponse(result=s_chat.Result(success=True))
 
 
-async def get_message_history(chat_id: int, user_uid: UUID4, message_id: int, page_size: int) -> list[s_chat.Message]:
-    condition = db.Message.chat_id == chat_id
+def _get_message_history_condition(chat_id: int, message_id: int, look_forward: bool, include_message: bool) -> tuple:
+    condition: ColumnElement[bool] = db.Message.chat_id == chat_id
+    order_by: Union[UnaryExpression[int], InstrumentedAttribute[int]] = db.Message.id.desc()
 
-    if message_id:
-        condition &= db.Message.id <= message_id
+    if not message_id:
+        return condition, order_by
+
+    if look_forward:
+        if include_message:
+            condition &= db.Message.id >= message_id
+        else:
+            condition &= db.Message.id > message_id
+        order_by = db.Message.id
+    else:
+        if include_message:
+            condition &= db.Message.id <= message_id
+        else:
+            condition &= db.Message.id < message_id
+    return condition, order_by
+
+
+async def get_message_history(
+    chat_id: int, user_uid: UUID4, message_id: int, page_size: int, look_forward: bool, include_message: bool
+) -> list[s_chat.Message]:
+    condition, order_by = _get_message_history_condition(
+        chat_id=chat_id, message_id=message_id, look_forward=look_forward, include_message=include_message
+    )
 
     query = (
         select(db.Message)
@@ -234,7 +258,7 @@ async def get_message_history(chat_id: int, user_uid: UUID4, message_id: int, pa
             db.ChatRelationship, and_(db.ChatRelationship.chat_id == chat_id, db.ChatRelationship.user_uid == user_uid)
         )
         .where(condition)
-        .order_by(db.Message.id.desc())
+        .order_by(order_by)
         .limit(page_size)
     )
 

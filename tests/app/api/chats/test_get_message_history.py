@@ -51,7 +51,6 @@ async def test_get_message_history(client: "AsyncClient", chat_relationship_db_f
     assert len(message_history) == messages_count
 
     for message, message_id in zip(message_history, messages_id_list):
-        print(message["id"], message_id)
         assert message["user_uid"] == str(chat_rel.user_uid)
         assert message["chat_id"] == chat_rel.chat_id
         assert message["id"] == message_id
@@ -117,7 +116,7 @@ async def test_get_message_history_with_message_id_param(
     client: "AsyncClient", chat_relationship_db_f, message_db_f
 ) -> None:
     chat_rel = await chat_relationship_db_f.create(user_role=ChatUserRole.CREATOR)
-    messages_count = config.application.message_history_page_size * 2
+    messages_count = config.application.message_history_page_size * 3
     messages_id_list = await get_sorted_messages_id_list(
         messages_count, chat_rel.user_uid, chat_rel.chat_id, message_db_f
     )
@@ -128,6 +127,97 @@ async def test_get_message_history_with_message_id_param(
         app.other_asgi_app.url_path_for("get_message_history"),
         headers={config.application.user_header_name: str(chat_rel.user_uid)},
         params={"chat_id": chat_rel.chat_id, "message_id": message_id},
+    )
+
+    message_history = response.json()
+
+    assert response.status_code == status.HTTP_200_OK
+    assert len(message_history) == config.application.message_history_page_size
+
+    for message, message_id in zip(message_history, messages_id_list[message_index + 1 :]):
+        assert message["user_uid"] == str(chat_rel.user_uid)
+        assert message["chat_id"] == chat_rel.chat_id
+        assert message["id"] == message_id
+
+
+@pytest.mark.usefixtures("clear_db")
+async def test_get_message_history_with_message_id_param_include_message(
+    client: "AsyncClient", chat_relationship_db_f, message_db_f
+) -> None:
+    chat_rel = await chat_relationship_db_f.create(user_role=ChatUserRole.CREATOR)
+    messages_count = config.application.message_history_page_size * 3
+    messages_id_list = await get_sorted_messages_id_list(
+        messages_count, chat_rel.user_uid, chat_rel.chat_id, message_db_f
+    )
+    message_index = config.application.message_history_page_size
+    message_id = messages_id_list[message_index]
+
+    response = await client.get(
+        app.other_asgi_app.url_path_for("get_message_history"),
+        headers={config.application.user_header_name: str(chat_rel.user_uid)},
+        params={"chat_id": chat_rel.chat_id, "message_id": message_id, "include_message": True},
+    )
+
+    message_history = response.json()
+
+    assert response.status_code == status.HTTP_200_OK
+    assert len(message_history) == config.application.message_history_page_size
+
+    for message, message_id in zip(message_history, messages_id_list[message_index:]):
+        assert message["user_uid"] == str(chat_rel.user_uid)
+        assert message["chat_id"] == chat_rel.chat_id
+        assert message["id"] == message_id
+
+
+@pytest.mark.usefixtures("clear_db")
+async def test_get_message_history_with_message_id_and_look_forward_param(
+    client: "AsyncClient", chat_relationship_db_f, message_db_f
+) -> None:
+    chat_rel = await chat_relationship_db_f.create(user_role=ChatUserRole.CREATOR)
+    messages_count = config.application.message_history_page_size * 3
+    messages_id_list = await get_sorted_messages_id_list(
+        messages_count, chat_rel.user_uid, chat_rel.chat_id, message_db_f, reverse=True
+    )
+    message_index = config.application.message_history_page_size + randint(
+        1, config.application.message_history_page_size
+    )
+    message_id = messages_id_list[message_index]
+
+    response = await client.get(
+        app.other_asgi_app.url_path_for("get_message_history"),
+        headers={config.application.user_header_name: str(chat_rel.user_uid)},
+        params={"chat_id": chat_rel.chat_id, "message_id": message_id, "look_forward": True},
+    )
+
+    message_history = response.json()
+
+    assert response.status_code == status.HTTP_200_OK
+    assert len(message_history) == config.application.message_history_page_size
+
+    for message, message_id in zip(message_history, messages_id_list[message_index + 1 :]):
+        assert message["user_uid"] == str(chat_rel.user_uid)
+        assert message["chat_id"] == chat_rel.chat_id
+        assert message["id"] == message_id
+
+
+@pytest.mark.usefixtures("clear_db")
+async def test_get_message_history_with_message_id_and_look_forward_param_include_message(
+    client: "AsyncClient", chat_relationship_db_f, message_db_f
+) -> None:
+    chat_rel = await chat_relationship_db_f.create(user_role=ChatUserRole.CREATOR)
+    messages_count = config.application.message_history_page_size * 3
+    messages_id_list = await get_sorted_messages_id_list(
+        messages_count, chat_rel.user_uid, chat_rel.chat_id, message_db_f, reverse=True
+    )
+    message_index = config.application.message_history_page_size + randint(
+        1, config.application.message_history_page_size
+    )
+    message_id = messages_id_list[message_index]
+
+    response = await client.get(
+        app.other_asgi_app.url_path_for("get_message_history"),
+        headers={config.application.user_header_name: str(chat_rel.user_uid)},
+        params={"chat_id": chat_rel.chat_id, "message_id": message_id, "look_forward": True, "include_message": True},
     )
 
     message_history = response.json()
