@@ -62,18 +62,7 @@ async def unpin_chat(chat_id: int, user_uid: UUID4 = Depends(get_current_user)) 
 
 @router.get("/message_history")
 async def get_message_history(
-    chat_id: int,
+    data: s_chat.GetMessageHistoryData = Depends(),
     user_uid: UUID4 = Depends(get_current_user),
-    message_id: int = 0,
-    page_size: int = config.application.message_history_page_size,
-    look_forward: bool = False,
-    include_message: bool = False,
 ) -> list[s_chat.Message]:
-    return await chats_service.get_message_history(
-        chat_id=chat_id,
-        user_uid=user_uid,
-        message_id=message_id,
-        page_size=page_size,
-        look_forward=look_forward,
-        include_message=include_message,
-    )
+    return await chats_service.get_message_history(data, user_uid)

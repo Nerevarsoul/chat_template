@@ -224,42 +224,47 @@ async def unpin_chat(chat_id: int, user_uid: UUID4) -> s_chat.ChatApiResponse:
     return s_chat.ChatApiResponse(result=s_chat.Result(success=True))
 
 
-def _get_message_history_condition(chat_id: int, message_id: int, look_forward: bool, include_message: bool) -> tuple:
-    condition: ColumnElement[bool] = db.Message.chat_id == chat_id
-    order_by: Union[UnaryExpression[int], InstrumentedAttribute[int]] = db.Message.id.desc()
+def _get_message_history_condition(data: s_chat.GetMessageHistoryData) -> ColumnElement[bool]:
+    condition: ColumnElement[bool] = db.Message.chat_id == data.chat_id
 
-    if not message_id:
-        return condition, order_by
+    if not data.message_id:
+        return condition
 
-    if look_forward:
-        if include_message:
-            condition &= db.Message.id >= message_id
+    if data.look_forward:
+        if data.include_message:
+            condition &= db.Message.id >= data.message_id
         else:
-            condition &= db.Message.id > message_id
+            condition &= db.Message.id > data.message_id
+    else:
+        if data.include_message:
+            condition &= db.Message.id <= data.message_id
+        else:
+            condition &= db.Message.id < data.message_id
+    return condition
+
+
+def _get_message_history_order_by(look_forward: bool) -> UnaryExpression[int] | InstrumentedAttribute[int]:
+    order_by: UnaryExpression[int] | InstrumentedAttribute[int]
+    if look_forward:
         order_by = db.Message.id
     else:
-        if include_message:
-            condition &= db.Message.id <= message_id
-        else:
-            condition &= db.Message.id < message_id
-    return condition, order_by
+        order_by = db.Message.id.desc()
+    return order_by
 
 
-async def get_message_history(
-    chat_id: int, user_uid: UUID4, message_id: int, page_size: int, look_forward: bool, include_message: bool
-) -> list[s_chat.Message]:
-    condition, order_by = _get_message_history_condition(
-        chat_id=chat_id, message_id=message_id, look_forward=look_forward, include_message=include_message
-    )
+async def get_message_history(data: s_chat.GetMessageHistoryData, user_uid: UUID4) -> list[s_chat.Message]:
+    condition = _get_message_history_condition(data)
+    order_by = _get_message_history_order_by(look_forward=data.look_forward)
 
     query = (
         select(db.Message)
         .join(
-            db.ChatRelationship, and_(db.ChatRelationship.chat_id == chat_id, db.ChatRelationship.user_uid == user_uid)
+            db.ChatRelationship,
+            and_(db.ChatRelationship.chat_id == data.chat_id, db.ChatRelationship.user_uid == user_uid),
         )
         .where(condition)
         .order_by(order_by)
-        .limit(page_size)
+        .limit(data.page_size)
     )
 
     async with registry.session() as session:
