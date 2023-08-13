@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from pydantic.types import UUID4
 
-from app import config
 from app.schemas import chats as s_chat
 from app.services import chats as chats_service
 from app.services.utils import get_current_user

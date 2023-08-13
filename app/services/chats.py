@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Union
 
 from fastapi import HTTPException, status
 from pydantic.types import UUID4
