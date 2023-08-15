@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from pydantic.types import UUID4
 
-from app import config
 from app.schemas import chats as s_chat
 from app.services import chats as chats_service
 from app.services.utils import get_current_user
@@ -62,11 +61,7 @@ async def unpin_chat(chat_id: int, user_uid: UUID4 = Depends(get_current_user)) 
 
 @router.get("/message_history")
 async def get_message_history(
-    chat_id: int,
+    data: s_chat.GetMessageHistoryData = Depends(),
     user_uid: UUID4 = Depends(get_current_user),
-    message_id: int = 0,
-    page_size: int = config.application.message_history_page_size,
 ) -> list[s_chat.Message]:
-    return await chats_service.get_message_history(
-        chat_id=chat_id, user_uid=user_uid, message_id=message_id, page_size=page_size
-    )
+    return await chats_service.get_message_history(data, user_uid)

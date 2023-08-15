@@ -10,9 +10,9 @@ async def generate_chat_history(user: db.User, chat_relationship_db_f, count: in
         await chat_relationship_db_f.create(chat=rel.chat)
 
 
-async def get_sorted_messages_id_list(messages_count: int, user_uid: UUID4, chat_id: int, message_db_f) -> list[int]:
-    messages_id = []
-    for message in message_db_f.create_batch(messages_count, user_uid=user_uid, chat_id=chat_id):
-        new_message = await message
-        messages_id.append(new_message.id)
-    return sorted(messages_id, reverse=True)
+async def get_sorted_messages_id_list(
+    messages_count: int, user_uid: UUID4, chat_id: int, message_db_f, reverse: bool = False
+) -> list[int]:
+    messages = message_db_f.create_batch(messages_count, user_uid=user_uid, chat_id=chat_id)
+    messages_id = [(await message).id for message in messages]
+    return sorted(messages_id, reverse=not reverse)

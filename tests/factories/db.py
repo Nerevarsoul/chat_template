@@ -50,7 +50,7 @@ class ChatRelationshipFactory(AsyncSQLAlchemyFactory):
 
 
 class MessageFactory(AsyncSQLAlchemyFactory):
-    id = factory.Faker("pyint")
+    id = factory.Sequence(lambda n: n + 1)
     user_uid = factory.LazyFunction(uuid.uuid4)
     chat_id = factory.Faker("pyint")
     client_id = factory.LazyFunction(uuid.uuid4)

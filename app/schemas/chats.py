@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.types import UUID4
 
+from app import config
 from app.db.enums import ChatState, ChatUserRole, MessageType
 
 __all__ = (
@@ -95,3 +96,11 @@ class Message(BaseModel):
     time_updated: None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class GetMessageHistoryData(BaseModel):
+    chat_id: int
+    message_id: int = 0
+    page_size: int = config.application.message_history_page_size
+    look_forward: bool = False
+    include_message: bool = False
