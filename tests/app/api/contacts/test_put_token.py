@@ -56,9 +56,10 @@ async def test_put_notifications_token(user_db_f, client: "AsyncClient") -> None
 @pytest.mark.usefixtures("clear_db")
 async def test_put_notifications_token_retry(user_db_f, client: "AsyncClient") -> None:
     user = await user_db_f.create()
+    request_body = TokenDataFactory.build(device_type=PlatformName.IOS)
     response = await client.post(
         app.other_asgi_app.url_path_for("put_notifications_token"),
-        json=jsonable_encoder(TokenDataFactory.build(device_type=PlatformName.IOS)),
+        json=jsonable_encoder(request_body),
         headers={config.application.user_header_name: str(user.uid)},
     )
     assert response.status_code == status.HTTP_200_OK
@@ -71,6 +72,7 @@ async def test_put_notifications_token_retry(user_db_f, client: "AsyncClient") -
     assert response.status_code == status.HTTP_200_OK
 
     async with registry.session() as session:
-        query = select(func.count()).select_from(Device).where(Device.user_uid == user.uid)
-        quantity = (await session.execute(query)).scalar()
-    assert quantity == 1
+        query = select(Device).where(Device.user_uid == user.uid)
+        devices = (await session.execute(query)).scalars().all()
+    assert len(devices) == 1
+    assert devices[0].token == request_body.token
