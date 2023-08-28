@@ -71,14 +71,6 @@ class ManageRecipientsData(BaseModel):
     contacts: list[UUID4]
 
 
-class Result(BaseModel):
-    success: bool
-
-
-class ChatApiResponse(BaseModel):
-    result: Result
-
-
 class Message(BaseModel):
     id: int
     user_uid: UUID4

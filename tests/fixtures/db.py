@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.sql import text
 
 from app.clients import cache
-from app.db import Chat, ChatRelationship, Message, User
+from app.db import Chat, ChatRelationship, Device, Message, User
 from app.db.registry import registry as db_registry
 
 TRUNCATE_QUERY = "TRUNCATE TABLE {tbl_name} CASCADE;"
@@ -18,6 +18,7 @@ async def clear_db() -> AsyncGenerator[None, None]:
         await conn.execute(text(TRUNCATE_QUERY.format(tbl_name=Chat.__tablename__)))
         await conn.execute(text(TRUNCATE_QUERY.format(tbl_name=User.__tablename__)))
         await conn.execute(text(TRUNCATE_QUERY.format(tbl_name=Message.__tablename__)))
+        await conn.execute(text(TRUNCATE_QUERY.format(tbl_name=Device.__tablename__)))
 
 
 @pytest.fixture

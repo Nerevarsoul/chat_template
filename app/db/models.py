@@ -12,6 +12,7 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TSVECTOR
@@ -79,3 +80,16 @@ class Message(Base):  # type: ignore[valid-type, misc]
     time_updated: Mapped[datetime] = mapped_column(DateTime, onupdate=func.now(), nullable=True)
 
     __table_args__ = (Index("search_by_message_text", search_text, postgresql_using="gin"),)
+
+
+class Device(Base):  # type: ignore[valid-type, misc]
+    __tablename__ = "devices"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    user_uid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.uid"), nullable=True, index=True)
+    token: Mapped[str] = mapped_column(String(256), nullable=False)
+    platform: Mapped[str] = mapped_column(String(32), nullable=False)
+    time_created: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
+    time_updated: Mapped[datetime] = mapped_column(DateTime, onupdate=func.now(), nullable=True)
+
+    __table_args__ = (UniqueConstraint("user_uid", "platform", name="uqp_user_uid_platform"),)
