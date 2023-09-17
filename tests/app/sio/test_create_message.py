@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import func, select
 
 from app.db.enums import MessageType
-from app.db.models import Message
+from app.db.models import Message, ChatRelationship
 from app.db.registry import registry
 from app.services import sio as sio_service
 from tests.factories.schemas import NewMessageFactory
@@ -62,3 +62,54 @@ async def test_create_empty_message(user_db_f, chat_db_f):
         query = select(func.count()).select_from(Message).where(Message.chat_id == chat.id)
         messages_quantity = (await session.execute(query)).scalar()
     assert messages_quantity == 0
+
+
+@pytest.mark.usefixtures("clear_db")
+async def test_update_unread_counter(chat_relationship_db_f):
+    chat_rel1 = await chat_relationship_db_f.create(unread_counter=2)
+    chat_id = chat_rel1.chat_id
+    chat_rel2 = await chat_relationship_db_f.create(chat__id=chat_id, unread_counter=5)
+
+    new_message = NewMessageFactory.build(sender_id=chat_rel1.user_uid, chat_id=chat_id)
+
+    is_inserted = await sio_service.process_message(new_message=new_message.model_dump(by_alias=True))
+    assert is_inserted is True
+
+    async with registry.session() as session:
+        query = select(ChatRelationship).where(ChatRelationship.chat_id == chat_id)
+        db_chat_rels = (await session.execute(query)).scalars()
+
+    for db_chat_rel in db_chat_rels:
+        if db_chat_rel.user_uid == chat_rel1.user_uid:
+            assert db_chat_rel.unread_counter == 2
+        elif db_chat_rel.user_uid == chat_rel2.user_uid:
+            assert db_chat_rel.unread_counter == 6
+        else:
+            raise
+
+
+@pytest.mark.usefixtures("clear_db")
+async def test_retry_update_unread_counter(chat_relationship_db_f):
+    chat_rel1 = await chat_relationship_db_f.create()
+    chat_id = chat_rel1.chat_id
+    chat_rel2 = await chat_relationship_db_f.create(chat__id=chat_id)
+
+    new_message = NewMessageFactory.build(sender_id=chat_rel1.user_uid, chat_id=chat_id)
+
+    is_inserted = await sio_service.process_message(new_message=new_message.model_dump(by_alias=True))
+    assert is_inserted is True
+
+    is_inserted = await sio_service.process_message(new_message=new_message.model_dump(by_alias=True))
+    assert is_inserted is False
+
+    async with registry.session() as session:
+        query = select(ChatRelationship).where(ChatRelationship.chat_id == chat_id)
+        db_chat_rels = (await session.execute(query)).scalars()
+
+    for db_chat_rel in db_chat_rels:
+        if db_chat_rel.user_uid == chat_rel1.user_uid:
+            assert db_chat_rel.unread_counter == 0
+        elif db_chat_rel.user_uid == chat_rel2.user_uid:
+            assert db_chat_rel.unread_counter == 1
+        else:
+            raise
