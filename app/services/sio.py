@@ -1,6 +1,6 @@
 from loguru import logger
-from sqlalchemy import func, select
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import func, select, update, and_
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.functions import coalesce
 from starlette.datastructures import Headers
 
@@ -32,8 +32,8 @@ async def disconnect(sid: str) -> None:
 
 async def save_message(message_for_saving: s_sio.NewMessage) -> bool:
     async with registry.session() as session:
-        query = (
-            insert(db.Message)
+        insert_message_query = (
+            pg_insert(db.Message)
             .values(
                 **message_for_saving.model_dump(),
                 search_text=func.to_tsvector(coalesce(message_for_saving.text.lower(), "")),
@@ -43,9 +43,25 @@ async def save_message(message_for_saving: s_sio.NewMessage) -> bool:
                 constraint="messages_client_id_key",
             )
         )
-        res = await session.execute(query)
+        res = await session.execute(insert_message_query)
+
+        is_inserted = res.is_insert and res.rowcount == 1
+
+        if is_inserted:
+            update_unread_counter_query = (
+                update(db.ChatRelationship)
+                .values(unread_counter=db.ChatRelationship.unread_counter + 1)
+                .where(
+                    and_(
+                        db.ChatRelationship.chat_id == message_for_saving.chat_id,
+                        db.ChatRelationship.user_uid != message_for_saving.user_uid,
+                    )
+                )
+            )
+            await session.execute(update_unread_counter_query)
+
         await session.commit()
-    return res.is_insert and res.rowcount == 1
+    return is_inserted
 
 
 async def process_message(new_message: dict) -> bool:
