@@ -34,7 +34,7 @@ async def disconnect_handler(sid: str) -> None:
 async def create_message_handler(sid: str, new_message: dict) -> dict:
     logger.debug(f"Receive message: {new_message}")
     try:
-        await sio_service.process_message(sio, new_message, sid)
+        await sio_service.process_message(new_message, sid)
         return {"result": {"success": True}}
     except Exception as e:
         return {"error": str(e), "error_code": 500}

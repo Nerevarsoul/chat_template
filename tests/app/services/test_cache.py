@@ -31,17 +31,18 @@ async def test_remove_sid_cache():
 @pytest.mark.usefixtures("clear_cache")
 async def test_get_online_session():
     users_uid = [str(uuid.uuid4()) for _ in range(4)]
-    users_sid = [str(uuid.uuid4()) for _ in range(2)]
+    users_sid = [str(uuid.uuid4()) for _ in range(3)]
     await cache_service.create_sid_cache(users_uid[0], users_sid[0])
     await cache_service.create_sid_cache(users_uid[1], users_sid[1])
+    await cache_service.create_sid_cache(users_uid[1], users_sid[2])
+    recipients_data = {user_uid: [] for user_uid in users_uid}
 
-    online_recipients_sid, offline_recipients_uid = await cache_service.get_online_session(
-        recipients_uid=users_uid, sid=users_sid[0]
-    )
+    recipients_data = await cache_service.get_online_session(recipients_data=recipients_data, sid=users_sid[0])
 
-    assert len(online_recipients_sid) == 1
-    assert online_recipients_sid[0] == users_sid[1]
-
-    assert len(offline_recipients_uid) == 2
-    assert users_uid[2] in offline_recipients_uid
-    assert users_uid[3] in offline_recipients_uid
+    assert len(recipients_data.keys()) == 3
+    assert users_uid[1] in recipients_data.keys()
+    assert sorted(recipients_data[users_uid[1]]) == sorted([users_sid[1], users_sid[2]])
+    assert users_uid[2] in recipients_data.keys()
+    assert recipients_data[users_uid[2]] == []
+    assert users_uid[3] in recipients_data.keys()
+    assert recipients_data[users_uid[3]] == []
