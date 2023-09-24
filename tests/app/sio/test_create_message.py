@@ -1,7 +1,6 @@
 import random
 import uuid
 from datetime import datetime
-from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy import func, select
@@ -79,26 +78,24 @@ async def test_def_get_recipients_data(chat_relationship_db_f) -> None:
     chat_rel_1 = await chat_relationship_db_f.create(user_role=ChatUserRole.CREATOR)
     chat_rel_2 = await chat_relationship_db_f.create(chat__id=chat_rel_1.chat_id)
 
-    recipients_data = await sio_service._get_recipients_data(chat_id=chat_rel_1.chat_id)
+    recipients_uid = await sio_service._get_recipients_uid(chat_id=chat_rel_1.chat_id)
 
-    assert len(recipients_data.keys()) == 2
-    assert str(chat_rel_1.user_uid) in recipients_data.keys()
-    assert recipients_data[str(chat_rel_1.user_uid)] == []
-    assert str(chat_rel_2.user_uid) in recipients_data.keys()
-    assert recipients_data[str(chat_rel_2.user_uid)] == []
+    assert len(recipients_uid) == 2
+    assert str(chat_rel_1.user_uid) in recipients_uid
+    assert str(chat_rel_2.user_uid) in recipients_uid
 
 
 def test_get_online_recipiets_sid() -> None:
     recipints_uid = [str(uuid.uuid4()) for _ in range(4)]
     recipints_sid = [str(uuid.uuid4()) for _ in range(3)]
     recipients_data = {
-        recipints_uid[0]: [],
-        recipints_uid[1]: [recipints_sid[0], recipints_sid[1]],
-        recipints_uid[2]: [],
-        recipints_uid[3]: [recipints_sid[2]],
+        recipints_uid[0]: set(),
+        recipints_uid[1]: {recipints_sid[0], recipints_sid[1]},
+        recipints_uid[2]: set(),
+        recipints_uid[3]: {recipints_sid[2]},
     }
 
-    online_recipients_sid = sio_service._get_online_recipiets_sid(recipients_data)
+    online_recipients_sid = sio_service._get_online_recipients_sid(recipients_data)
 
     assert sorted(recipints_sid) == sorted(online_recipients_sid)
 
@@ -107,13 +104,13 @@ def test_offline_recipiets_uid() -> None:
     recipints_uid = [str(uuid.uuid4()) for _ in range(4)]
     recipints_sid = [str(uuid.uuid4()) for _ in range(3)]
     recipients_data = {
-        recipints_uid[0]: [],
-        recipints_uid[1]: [recipints_sid[0], recipints_sid[1]],
-        recipints_uid[2]: [],
-        recipints_uid[3]: [recipints_sid[2]],
+        recipints_uid[0]: set(),
+        recipints_uid[1]: {recipints_sid[0], recipints_sid[1]},
+        recipints_uid[2]: set(),
+        recipints_uid[3]: {recipints_sid[2]},
     }
 
-    offline_recipiets_uid = sio_service._get_offline_recipiets_uid(recipients_data)
+    offline_recipiets_uid = sio_service._get_offline_recipients_uid(recipients_data)
 
     assert sorted([recipints_uid[0], recipints_uid[2]]) == sorted(offline_recipiets_uid)
 
@@ -123,7 +120,7 @@ async def test_def_send_online_mesage(mocker) -> None:
     recipients_sid = [str(uuid.uuid4()) for _ in range(count_of_recipients)]
     message = {"test": "mesasge"}
     event_name = "event:name"
-    mocker.patch.object(sio_service.sio, "sio", AsyncMock)
+    mocker.patch("app.sio.views.sio")
 
     await sio_service._send_online_message(recipients_sid=recipients_sid, message=message, event_name=event_name)
 

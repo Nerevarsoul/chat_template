@@ -35,14 +35,16 @@ async def test_get_online_session():
     await cache_service.create_sid_cache(users_uid[0], users_sid[0])
     await cache_service.create_sid_cache(users_uid[1], users_sid[1])
     await cache_service.create_sid_cache(users_uid[1], users_sid[2])
-    recipients_data = {user_uid: [] for user_uid in users_uid}
 
-    recipients_data = await cache_service.get_online_session(recipients_data=recipients_data, sid=users_sid[0])
+    recipients_data = await cache_service.get_online_session(recipients_uid=users_uid)
 
-    assert len(recipients_data.keys()) == 3
+    assert len(recipients_data.keys()) == 4
+
+    assert users_uid[0] in recipients_data.keys()
+    assert recipients_data[users_uid[0]] == {users_sid[0]}
     assert users_uid[1] in recipients_data.keys()
-    assert sorted(recipients_data[users_uid[1]]) == sorted([users_sid[1], users_sid[2]])
+    assert recipients_data[users_uid[1]] == {users_sid[1], users_sid[2]}
     assert users_uid[2] in recipients_data.keys()
-    assert recipients_data[users_uid[2]] == []
+    assert recipients_data[users_uid[2]] == set()
     assert users_uid[3] in recipients_data.keys()
-    assert recipients_data[users_uid[3]] == []
+    assert recipients_data[users_uid[3]] == set()

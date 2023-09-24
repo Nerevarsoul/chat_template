@@ -12,8 +12,6 @@ from app.db.enums import MessageType
 from app.db.registry import registry
 from app.schemas import sio as s_sio
 from app.services import cache as cache_service
-
-# from app.sio import sio
 from app.sio.constants import NAMESPACE
 
 
@@ -77,34 +75,34 @@ async def _send_message(
     sid: str = "",
     send_to_offline: bool = False,
 ) -> None:
-    recipients_data = await _get_recipients_data(chat_id)
-    logger.debug(f"Recipients for - {event_name} - {recipients_data.keys()}")
-    recipients_data = await cache_service.get_online_session(recipients_data=recipients_data, sid=sid)
-    online_recipients_sid = _get_online_recipiets_sid(recipients_data)
+    recipients_uid = await _get_recipients_uid(chat_id)
+    logger.debug(f"Recipients for - {event_name} - {recipients_uid}")
+    recipients_data = await cache_service.get_online_session(recipients_uid=recipients_uid)
+    online_recipients_sid = _get_online_recipients_sid(recipients_data)
     if online_recipients_sid:
         logger.debug(f"Online recipients for - {event_name} - {online_recipients_sid}")
         await _send_online_message(recipients_sid=online_recipients_sid, message=message, event_name=event_name)
     if send_to_offline:
-        offline_recipients_uid = _get_offline_recipiets_uid(recipients_data)
+        offline_recipients_uid = _get_offline_recipients_uid(recipients_data)
         if offline_recipients_uid:
             logger.debug(f"Online recipients for - {event_name} - {offline_recipients_uid}")
             await _send_ofline_message(recipients_uid=offline_recipients_uid, message=message, sender_uid=sender_uid)
 
 
-async def _get_recipients_data(chat_id: int) -> dict[str, list]:
+async def _get_recipients_uid(chat_id: int) -> list[str]:
     query = select(db.ChatRelationship.user_uid).where(db.ChatRelationship.chat_id == chat_id)
     async with registry.session() as session:
         chat_recipients = await session.execute(query)
 
-    return {str(recipient_uid): [] for recipient_uid in chat_recipients.scalars()}
+    return [str(recipient_uid) for recipient_uid in chat_recipients.scalars()]
 
 
-def _get_online_recipiets_sid(recipients_data: dict[str, list]) -> list[str]:
-    return [value for value in list(chain(*recipients_data.values())) if value != []]
+def _get_online_recipients_sid(recipients_data: dict[str, set]) -> list[str]:
+    return [recipient_sid for recipient_sid in chain(*recipients_data.values()) if recipient_sid != set()]
 
 
-def _get_offline_recipiets_uid(recipients_data: dict[str, list]) -> list[str]:
-    return [key for key in recipients_data.keys() if recipients_data[key] == []]
+def _get_offline_recipients_uid(recipients_data: dict[str, set]) -> list[str]:
+    return [recipient_data[0] for recipient_data in recipients_data.items() if recipient_data[1] == set()]
 
 
 async def _send_online_message(recipients_sid: list[str], message: dict, event_name: str) -> None:

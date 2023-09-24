@@ -44,18 +44,10 @@ async def get_online_users() -> set[str]:
     return await cache.smembers(ONLINE_USER_KEY)
 
 
-async def get_online_session(recipients_data: dict[str, list], sid: str) -> dict[str, list]:
-    sender_uid = await get_user_uid_by_sid(sid)
-    if sender_uid:
-        del recipients_data[sender_uid]
-    recipients_uid = recipients_data.keys()
-
+async def get_online_session(recipients_uid: list[str]) -> dict[str, set]:
     pipe = cache.pipeline()
     for user_uid in recipients_uid:
         pipe.smembers(f"{SID_BY_USER_ID_KEY_PREFIX}{user_uid}")
-    res = await pipe.execute()
+    recipients_sid = await pipe.execute()
 
-    for recipient_uid, recipient_sid in list(zip(recipients_uid, res)):
-        if recipient_sid:
-            recipients_data[recipient_uid].extend(list(recipient_sid))
-    return recipients_data
+    return {recipient_uid: recipient_sid for recipient_uid, recipient_sid in zip(recipients_uid, recipients_sid)}
