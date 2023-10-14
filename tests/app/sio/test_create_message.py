@@ -1,6 +1,7 @@
 import random
 import uuid
 from datetime import datetime
+from unittest.mock import patch
 
 import pytest
 from sqlalchemy import func, select
@@ -115,16 +116,16 @@ def test_offline_recipiets_uid() -> None:
     assert sorted([recipints_uid[0], recipints_uid[2]]) == sorted(offline_recipiets_uid)
 
 
-async def test_def_send_online_mesage(mocker) -> None:
+async def test_def_send_online_mesage() -> None:
     count_of_recipients = random.randint(5, 10)
     recipients_sid = [str(uuid.uuid4()) for _ in range(count_of_recipients)]
     message = {"test": "mesasge"}
     event_name = "event:name"
-    mocker.patch("app.sio.views.sio")
 
-    await sio_service._send_online_message(recipients_sid=recipients_sid, message=message, event_name=event_name)
+    with patch("app.services.sio.sio.sio.emit") as sio_emit_mock:
+        await sio_service._send_online_message(recipients_sid=recipients_sid, message=message, event_name=event_name)
 
-    assert mocker.emit.await_count == count_of_recipients
+    assert sio_emit_mock.await_count == count_of_recipients
 
     for sid in recipients_sid:
-        mocker.emit.assert_any_await(event=event_name, data=message, to=sid, namespace=NAMESPACE)
+        sio_emit_mock.assert_any_await(event=event_name, data=message, to=sid, namespace=NAMESPACE)
