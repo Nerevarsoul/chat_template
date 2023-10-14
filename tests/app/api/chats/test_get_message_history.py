@@ -1,4 +1,4 @@
-from random import choice, randint
+from random import randint
 from typing import TYPE_CHECKING
 
 import pytest
@@ -178,8 +178,8 @@ async def test_get_message_history_with_message_id_and_look_forward_param(
     messages_id_list = await get_sorted_messages_id_list(
         messages_count, chat_rel.user_uid, chat_rel.chat_id, message_db_f, reverse=True
     )
-    message_index = config.application.message_history_page_size + randint(
-        1, config.application.message_history_page_size
+    message_index = (
+        config.application.message_history_page_size - 1 + randint(1, config.application.message_history_page_size)
     )
     message_id = messages_id_list[message_index]
 
@@ -190,7 +190,6 @@ async def test_get_message_history_with_message_id_and_look_forward_param(
     )
 
     message_history = response.json()
-
     assert response.status_code == status.HTTP_200_OK
     assert len(message_history) == config.application.message_history_page_size
 
