@@ -6,8 +6,8 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy import func, select
 
-from app.db import Message
 from app.db.enums import ChatUserRole, MessageType
+from app.db.models import ChatRelationship, Message
 from app.db.registry import registry
 from app.services import sio as sio_service
 from app.sio.constants import NAMESPACE
@@ -129,3 +129,54 @@ async def test_def_send_online_mesage() -> None:
 
     for sid in recipients_sid:
         sio_emit_mock.assert_any_await(event=event_name, data=message, to=sid, namespace=NAMESPACE)
+
+
+@pytest.mark.usefixtures("clear_db")
+async def test_update_unread_counter(chat_relationship_db_f):
+    chat_rel1 = await chat_relationship_db_f.create(unread_counter=2)
+    chat_id = chat_rel1.chat_id
+    chat_rel2 = await chat_relationship_db_f.create(chat__id=chat_id, unread_counter=5)
+
+    new_message = NewMessageFactory.build(sender_id=chat_rel1.user_uid, chat_id=chat_id)
+
+    saved_message_data = await sio_service._save_message(message_for_saving=new_message)
+    assert saved_message_data is not None
+
+    async with registry.session() as session:
+        query = select(ChatRelationship).where(ChatRelationship.chat_id == chat_id)
+        db_chat_rels = (await session.execute(query)).scalars()
+
+    for db_chat_rel in db_chat_rels:
+        if db_chat_rel.user_uid == chat_rel1.user_uid:
+            assert db_chat_rel.unread_counter == 2
+        elif db_chat_rel.user_uid == chat_rel2.user_uid:
+            assert db_chat_rel.unread_counter == 6
+        else:
+            raise
+
+
+@pytest.mark.usefixtures("clear_db")
+async def test_retry_update_unread_counter(chat_relationship_db_f):
+    chat_rel1 = await chat_relationship_db_f.create()
+    chat_id = chat_rel1.chat_id
+    chat_rel2 = await chat_relationship_db_f.create(chat__id=chat_id)
+
+    new_message = NewMessageFactory.build(sender_id=chat_rel1.user_uid, chat_id=chat_id)
+
+    saved_message_data = await sio_service._save_message(message_for_saving=new_message)
+    assert saved_message_data is not None
+
+    saved_message_data = await sio_service._save_message(message_for_saving=new_message)
+    assert saved_message_data is None
+
+    async with registry.session() as session:
+        query = select(ChatRelationship).where(ChatRelationship.chat_id == chat_id)
+        db_chat_rels = (await session.execute(query)).scalars()
+
+    for db_chat_rel in db_chat_rels:
+        if db_chat_rel.user_uid == chat_rel1.user_uid:
+            assert db_chat_rel.unread_counter == 0
+        elif db_chat_rel.user_uid == chat_rel2.user_uid:
+            assert db_chat_rel.unread_counter == 1
+        else:
+            raise

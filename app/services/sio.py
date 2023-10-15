@@ -2,8 +2,8 @@ from itertools import chain
 
 from loguru import logger
 from pydantic.types import UUID4
-from sqlalchemy import func, select
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import and_, func, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.functions import coalesce
 from starlette.datastructures import Headers
 
@@ -51,8 +51,8 @@ async def process_message(new_message: dict, sid: str) -> None:
 
 async def _save_message(message_for_saving: s_sio.NewMessage) -> tuple | None:
     async with registry.session() as session:
-        query = (
-            insert(db.Message)
+        insert_message_query = (
+            pg_insert(db.Message)
             .values(
                 **message_for_saving.model_dump(),
                 search_text=func.to_tsvector(coalesce(message_for_saving.text.lower(), "")),
@@ -62,9 +62,25 @@ async def _save_message(message_for_saving: s_sio.NewMessage) -> tuple | None:
                 constraint="messages_client_id_key",
             )
         )
-        saved_message_data = await session.execute(query.returning(db.Message.id, db.Message.time_created))
+        saved_message_data = (
+            await session.execute(insert_message_query.returning(db.Message.id, db.Message.time_created))
+        ).first()
+
+        if saved_message_data:
+            update_unread_counter_query = (
+                update(db.ChatRelationship)
+                .values(unread_counter=db.ChatRelationship.unread_counter + 1)
+                .where(
+                    and_(
+                        db.ChatRelationship.chat_id == message_for_saving.chat_id,
+                        db.ChatRelationship.user_uid != message_for_saving.user_uid,
+                    )
+                )
+            )
+            await session.execute(update_unread_counter_query)
+
         await session.commit()
-    return saved_message_data.first()
+    return saved_message_data
 
 
 async def _send_message(
