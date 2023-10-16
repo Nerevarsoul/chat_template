@@ -42,3 +42,12 @@ async def get_all_sid_by_user_uid(user_uid: str) -> set[str]:
 
 async def get_online_users() -> set[str]:
     return await cache.smembers(ONLINE_USER_KEY)
+
+
+async def get_online_session(recipients_uid: list[str]) -> dict[str, set]:
+    pipe = cache.pipeline()
+    for user_uid in recipients_uid:
+        pipe.smembers(f"{SID_BY_USER_ID_KEY_PREFIX}{user_uid}")
+    recipients_sid = await pipe.execute()
+
+    return {recipient_uid: recipient_sid for recipient_uid, recipient_sid in zip(recipients_uid, recipients_sid)}
