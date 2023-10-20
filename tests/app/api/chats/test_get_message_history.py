@@ -1,4 +1,4 @@
-from random import choice, randint
+from random import randint
 from typing import TYPE_CHECKING
 
 import pytest
@@ -169,17 +169,21 @@ async def test_get_message_history_with_message_id_param_include_message(
         assert message["id"] == message_id
 
 
+@pytest.mark.parametrize(
+    "messages_count, message_index, message_history_len",
+    [
+        (5, 0, 4),
+        (30, 5, config.application.message_history_page_size),
+        (20, 15, 4),
+    ],
+)
 @pytest.mark.usefixtures("clear_db")
 async def test_get_message_history_with_message_id_and_look_forward_param(
-    client: "AsyncClient", chat_relationship_db_f, message_db_f
+    client: "AsyncClient", chat_relationship_db_f, message_db_f, messages_count, message_index, message_history_len
 ) -> None:
     chat_rel = await chat_relationship_db_f.create(user_role=ChatUserRole.CREATOR)
-    messages_count = config.application.message_history_page_size * 3
     messages_id_list = await get_sorted_messages_id_list(
         messages_count, chat_rel.user_uid, chat_rel.chat_id, message_db_f, reverse=True
-    )
-    message_index = config.application.message_history_page_size + randint(
-        1, config.application.message_history_page_size
     )
     message_id = messages_id_list[message_index]
 
@@ -190,9 +194,8 @@ async def test_get_message_history_with_message_id_and_look_forward_param(
     )
 
     message_history = response.json()
-
     assert response.status_code == status.HTTP_200_OK
-    assert len(message_history) == config.application.message_history_page_size
+    assert len(message_history) == message_history_len
 
     for message, message_id in zip(message_history, messages_id_list[message_index + 1 :]):
         assert message["user_uid"] == str(chat_rel.user_uid)
@@ -200,17 +203,21 @@ async def test_get_message_history_with_message_id_and_look_forward_param(
         assert message["id"] == message_id
 
 
+@pytest.mark.parametrize(
+    "messages_count, message_index, message_history_len",
+    [
+        (5, 0, 5),
+        (30, 5, config.application.message_history_page_size),
+        (20, 15, 5),
+    ],
+)
 @pytest.mark.usefixtures("clear_db")
 async def test_get_message_history_with_message_id_and_look_forward_param_include_message(
-    client: "AsyncClient", chat_relationship_db_f, message_db_f
+    client: "AsyncClient", chat_relationship_db_f, message_db_f, messages_count, message_index, message_history_len
 ) -> None:
     chat_rel = await chat_relationship_db_f.create(user_role=ChatUserRole.CREATOR)
-    messages_count = config.application.message_history_page_size * 3
     messages_id_list = await get_sorted_messages_id_list(
         messages_count, chat_rel.user_uid, chat_rel.chat_id, message_db_f, reverse=True
-    )
-    message_index = config.application.message_history_page_size + randint(
-        1, config.application.message_history_page_size
     )
     message_id = messages_id_list[message_index]
 
@@ -223,7 +230,7 @@ async def test_get_message_history_with_message_id_and_look_forward_param_includ
     message_history = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    assert len(message_history) == config.application.message_history_page_size
+    assert len(message_history) == message_history_len
 
     for message, message_id in zip(message_history, messages_id_list[message_index:]):
         assert message["user_uid"] == str(chat_rel.user_uid)
