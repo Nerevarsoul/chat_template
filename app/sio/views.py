@@ -38,3 +38,13 @@ async def create_message_handler(sid: str, new_message: dict) -> dict:
         return {"result": {"success": True}}
     except Exception as e:
         return {"error": str(e), "error_code": 500}
+
+
+@sio.on("usr:msg:edit", namespace=NAMESPACE)
+async def edit_message_handler(sid: str, edited_message: dict) -> dict:
+    logger.debug(f"Edit message: {edited_message}")
+    try:
+        await sio_service.process_edit_message(edited_message, sid)
+        return {"result": {"success": True}}
+    except Exception as e:
+        return {"error": str(e), "error_code": 500}

@@ -1,5 +1,6 @@
 from itertools import chain
 
+from fastapi import HTTPException, status
 from loguru import logger
 from pydantic.types import UUID4
 from sqlalchemy import and_, func, select, update
@@ -49,6 +50,24 @@ async def process_message(new_message: dict, sid: str) -> None:
         )
 
 
+async def process_edit_message(edited_message: dict, sid: str) -> None:
+    user_uid = await cache_service.get_user_uid_by_sid(sid)
+    if edited_message["sender_id"] != user_uid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+
+    edited_message_data = await _update_message(s_sio.EditMessageData(**edited_message))
+
+    if edited_message_data:
+        edited_message["time_updated"] = edited_message_data[0].timestamp()
+        await _send_message(
+            message=edited_message,
+            chat_id=edited_message["chat_id"],
+            sender_uid=edited_message["user_uid"],
+            event_name=s_sio.SioEvents.CHANGE_MESSAGE,
+            sid=sid,
+        )
+
+
 async def _save_message(message_for_saving: s_sio.NewMessage) -> tuple | None:
     async with registry.session() as session:
         insert_message_query = (
@@ -81,6 +100,27 @@ async def _save_message(message_for_saving: s_sio.NewMessage) -> tuple | None:
 
         await session.commit()
     return saved_message_data
+
+
+async def _update_message(message_for_update: s_sio.EditMessageData) -> tuple | None:
+    async with registry.session() as session:
+        update_message_query = (
+            update(db.Message)
+            .values(
+                text=message_for_update.text,
+                search_text=func.to_tsvector(coalesce(message_for_update.text.lower(), "")),
+            )
+            .where(
+                and_(
+                    db.Message.id == message_for_update.message_id,
+                    db.Message.user_uid == message_for_update.user_uid,
+                )
+            )
+        )
+        updated_message_data = (await session.execute(update_message_query.returning(db.Message.time_updated))).first()
+
+        await session.commit()
+    return updated_message_data
 
 
 async def _send_message(
