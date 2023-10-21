@@ -14,6 +14,10 @@ class NewMessageFactory(ModelFactory):
     __model__ = s_sio.NewMessage
 
 
+class EditMessageDataFactory(ModelFactory):
+    __model__ = s_sio.EditMessageData
+
+
 class TokenDataFactory(ModelFactory):
     __model__ = s_contacts.TokenData
 
