@@ -1,5 +1,6 @@
 from itertools import chain
 
+from fastapi import HTTPException, status
 from loguru import logger
 from pydantic.types import UUID4
 from sqlalchemy import and_, func, select, update
@@ -54,15 +55,16 @@ async def process_message(new_message: dict, sid: str) -> None:
 async def process_edit_message(message: dict, sid: str) -> None:
     edited_message_data = await _update_message(s_sio.EditMessageData(**message))
 
-    if edited_message_data:
-        message["time_updated"] = edited_message_data[0].timestamp()
-        await _send_message(
-            message=message,
-            chat_id=message["chat_id"],
-            sender_uid=message["user_uid"],
-            event_name=s_sio.SioEvents.CHANGE_MESSAGE,
-            sid=sid,
-        )
+    if not edited_message_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    message["time_updated"] = edited_message_data[0].timestamp()
+    await _send_message(
+        message=message,
+        chat_id=message["chat_id"],
+        sender_uid=message["user_uid"],
+        event_name=s_sio.SioEvents.CHANGE_MESSAGE,
+        sid=sid,
+    )
 
 
 async def _save_message(message_for_saving: s_sio.NewMessage) -> tuple | None:

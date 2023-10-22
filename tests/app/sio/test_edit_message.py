@@ -144,10 +144,10 @@ async def test_edit_other_user_message(chat_relationship_db_f, message_db_f):
     sid = str(uuid.uuid4())
     await cache_service.create_sid_cache(str(chat_rel_2.user_uid), sid)
 
-    edited_message_data = await sio_service.process_edit_message(
-        message=edited_message.model_dump(by_alias=True, mode="json"), sid=sid
-    )
-    assert edited_message_data is None
+    with pytest.raises(Exception) as exc:
+        await sio_service.process_edit_message(message=edited_message.model_dump(by_alias=True, mode="json"), sid=sid)
+    assert exc.typename == "HTTPException"
+    assert exc.value.status_code == status.HTTP_404_NOT_FOUND
 
     async with registry.session() as session:
         query = select(func.count()).select_from(Message).where(Message.chat_id == edited_message.chat_id)
