@@ -78,9 +78,7 @@ async def test_edit_to_empty_message(chat_relationship_db_f, message_db_f):
     await cache_service.create_sid_cache(str(chat_rel.user_uid), sid)
 
     with pytest.raises(Exception) as exc:
-        await sio_service.process_edit_message(
-            edited_message=edited_message.model_dump(by_alias=True, mode="json"), sid=sid
-        )
+        await sio_service.process_edit_message(message=edited_message.model_dump(by_alias=True, mode="json"), sid=sid)
     assert exc.typename == "ValidationError"
     assert "text must contain characters" in str(exc.value)
 
@@ -113,9 +111,7 @@ async def test_edit_message_with_wrong_sender_id(chat_relationship_db_f, message
     await cache_service.create_sid_cache(str(chat_rel.user_uid), sid)
 
     with pytest.raises(Exception) as exc:
-        await sio_service.process_edit_message(
-            edited_message=edited_message.model_dump(by_alias=True, mode="json"), sid=sid
-        )
+        await sio_service.process_edit_message(message=edited_message.model_dump(by_alias=True, mode="json"), sid=sid)
     assert exc.typename == "HTTPException"
     assert exc.value.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -149,7 +145,7 @@ async def test_edit_other_user_message(chat_relationship_db_f, message_db_f):
     await cache_service.create_sid_cache(str(chat_rel_2.user_uid), sid)
 
     edited_message_data = await sio_service.process_edit_message(
-        edited_message=edited_message.model_dump(by_alias=True, mode="json"), sid=sid
+        message=edited_message.model_dump(by_alias=True, mode="json"), sid=sid
     )
     assert edited_message_data is None
 

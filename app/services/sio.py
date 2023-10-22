@@ -1,6 +1,5 @@
 from itertools import chain
 
-from fastapi import HTTPException, status
 from loguru import logger
 from pydantic.types import UUID4
 from sqlalchemy import and_, func, select, update
@@ -13,6 +12,7 @@ from app.db.enums import MessageType
 from app.db.registry import registry
 from app.schemas import sio as s_sio
 from app.services import cache as cache_service
+from app.services.utils import check_user_uid_by_sid
 from app.sio.constants import NAMESPACE
 
 
@@ -50,19 +50,16 @@ async def process_message(new_message: dict, sid: str) -> None:
         )
 
 
-async def process_edit_message(edited_message: dict, sid: str) -> None:
-    user_uid = await cache_service.get_user_uid_by_sid(sid)
-    if edited_message["sender_id"] != user_uid:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-
-    edited_message_data = await _update_message(s_sio.EditMessageData(**edited_message))
+@check_user_uid_by_sid
+async def process_edit_message(message: dict, sid: str) -> None:
+    edited_message_data = await _update_message(s_sio.EditMessageData(**message))
 
     if edited_message_data:
-        edited_message["time_updated"] = edited_message_data[0].timestamp()
+        message["time_updated"] = edited_message_data[0].timestamp()
         await _send_message(
-            message=edited_message,
-            chat_id=edited_message["chat_id"],
-            sender_uid=edited_message["user_uid"],
+            message=message,
+            chat_id=message["chat_id"],
+            sender_uid=message["user_uid"],
             event_name=s_sio.SioEvents.CHANGE_MESSAGE,
             sid=sid,
         )
