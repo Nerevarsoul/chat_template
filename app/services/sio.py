@@ -1,5 +1,6 @@
 from itertools import chain
 
+from fastapi import HTTPException, status
 from loguru import logger
 from pydantic.types import UUID4
 from sqlalchemy import and_, func, select, update
@@ -12,6 +13,7 @@ from app.db.enums import MessageType
 from app.db.registry import registry
 from app.schemas import sio as s_sio
 from app.services import cache as cache_service
+from app.services.utils import check_user_uid_by_sid
 from app.sio.constants import NAMESPACE
 
 
@@ -49,6 +51,22 @@ async def process_message(new_message: dict, sid: str) -> None:
         )
 
 
+@check_user_uid_by_sid
+async def process_edit_message(message: dict, sid: str) -> None:
+    edited_message_data = await _update_message(s_sio.EditMessageData(**message))
+
+    if not edited_message_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    message["time_updated"] = edited_message_data[0].timestamp()
+    await _send_message(
+        message=message,
+        chat_id=message["chat_id"],
+        sender_uid=message["user_uid"],
+        event_name=s_sio.SioEvents.CHANGE_MESSAGE,
+        sid=sid,
+    )
+
+
 async def _save_message(message_for_saving: s_sio.NewMessage) -> tuple | None:
     async with registry.session() as session:
         insert_message_query = (
@@ -81,6 +99,27 @@ async def _save_message(message_for_saving: s_sio.NewMessage) -> tuple | None:
 
         await session.commit()
     return saved_message_data
+
+
+async def _update_message(message_for_update: s_sio.EditMessageData) -> tuple | None:
+    async with registry.session() as session:
+        update_message_query = (
+            update(db.Message)
+            .values(
+                text=message_for_update.text,
+                search_text=func.to_tsvector(coalesce(message_for_update.text.lower(), "")),
+            )
+            .where(
+                and_(
+                    db.Message.id == message_for_update.message_id,
+                    db.Message.user_uid == message_for_update.user_uid,
+                )
+            )
+        )
+        updated_message_data = (await session.execute(update_message_query.returning(db.Message.time_updated))).first()
+
+        await session.commit()
+    return updated_message_data
 
 
 async def _send_message(

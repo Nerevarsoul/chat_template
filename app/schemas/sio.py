@@ -7,6 +7,7 @@ from pydantic.types import UUID4
 class SioEvents(enum.StrEnum):
     USER_MISSING = "srv:user:missing"
     NEW_MESSAGE = "srv:msg:new"
+    CHANGE_MESSAGE = "srv:msg:change"
 
 
 class NewMessage(BaseModel):
@@ -21,3 +22,7 @@ class NewMessage(BaseModel):
         if not clear_text:
             raise ValueError("text must contain characters")
         return clear_text
+
+
+class EditMessageData(NewMessage):
+    message_id: int
