@@ -1,4 +1,5 @@
 import socketio
+from fastapi import HTTPException
 from loguru import logger
 
 from app import config
@@ -46,5 +47,7 @@ async def edit_message_handler(sid: str, message: dict) -> dict:
     try:
         await sio_service.process_edit_message(message, sid)
         return {"result": {"success": True}}
+    except HTTPException as e:
+        return {"error": e.detail, "error_code": e.status_code}
     except Exception as e:
         return {"error": str(e), "error_code": 500}
