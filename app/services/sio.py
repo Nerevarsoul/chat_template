@@ -36,7 +36,7 @@ async def disconnect(sid: str) -> None:
     await cache_service.remove_sid_cache(sid)
 
 
-async def process_message(new_message: dict, sid: str) -> None:
+async def process_create_message(new_message: dict, sid: str) -> None:
     saved_message_data = await _save_message(s_sio.NewMessage(**new_message))
     if saved_message_data:
         new_message["id"] = saved_message_data[0]

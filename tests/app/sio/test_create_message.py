@@ -65,7 +65,9 @@ async def test_create_empty_message(user_db_f, chat_db_f):
     new_message = NewMessageFactory.build(factory_use_construct=True, sender_id=user.uid, chat_id=chat.id, text="")
 
     with pytest.raises(Exception) as exc:
-        await sio_service.process_message(new_message=new_message.model_dump(by_alias=True), sid=str(uuid.uuid4()))
+        await sio_service.process_create_message(
+            new_message=new_message.model_dump(by_alias=True), sid=str(uuid.uuid4())
+        )
     assert exc.typename == "ValidationError"
 
     async with registry.session() as session:
