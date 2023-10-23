@@ -36,15 +36,17 @@ async def disconnect(sid: str) -> None:
     await cache_service.remove_sid_cache(sid)
 
 
-async def process_create_message(new_message: dict, sid: str) -> None:
-    saved_message_data = await _save_message(s_sio.NewMessage(**new_message))
+@check_user_uid_by_sid
+async def process_create_message(message: dict, sid: str) -> None:
+    saved_message_data = await _save_message(s_sio.NewMessage(**message))
+
     if saved_message_data:
-        new_message["id"] = saved_message_data[0]
-        new_message["time_created"] = saved_message_data[1].timestamp()
+        message["id"] = saved_message_data[0]
+        message["time_created"] = saved_message_data[1].timestamp()
         await _send_message(
-            message=new_message,
-            chat_id=new_message["chat_id"],
-            sender_uid=new_message["user_uid"],
+            message=message,
+            chat_id=message["chat_id"],
+            sender_uid=message["user_uid"],
             event_name=s_sio.SioEvents.MESSAGE_NEW,
             sid=sid,
             send_to_offline=True,

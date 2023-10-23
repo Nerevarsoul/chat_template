@@ -32,11 +32,13 @@ async def disconnect_handler(sid: str) -> None:
 
 
 @sio.on("usr:msg:create", namespace=NAMESPACE)
-async def create_message_handler(sid: str, new_message: dict) -> dict:
-    logger.debug(f"Receive message: {new_message}")
+async def create_message_handler(sid: str, message: dict) -> dict:
+    logger.debug(f"Receive message: {message}")
     try:
-        await sio_service.process_create_message(new_message, sid)
+        await sio_service.process_create_message(message, sid)
         return {"result": {"success": True}}
+    except HTTPException as e:
+        return {"error": e.detail, "error_code": e.status_code}
     except Exception as e:
         return {"error": str(e), "error_code": 500}
 

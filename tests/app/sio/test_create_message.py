@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from app.db.enums import ChatUserRole, MessageType
 from app.db.models import ChatRelationship, Message
 from app.db.registry import registry
+from app.services import cache as cache_service
 from app.services import sio as sio_service
 from app.sio.constants import NAMESPACE
 from tests.factories.schemas import NewMessageFactory
@@ -58,17 +59,20 @@ async def test_retry_create_message(user_db_f, chat_db_f, message_db_f):
     assert messages_quantity == 1
 
 
+@pytest.mark.usefixtures("clear_cache")
 @pytest.mark.usefixtures("clear_db")
 async def test_create_empty_message(user_db_f, chat_db_f):
     user = await user_db_f.create()
     chat = await chat_db_f.create()
     new_message = NewMessageFactory.build(factory_use_construct=True, sender_id=user.uid, chat_id=chat.id, text="")
 
+    sid = str(uuid.uuid4())
+    await cache_service.create_sid_cache(str(user.uid), sid)
+
     with pytest.raises(Exception) as exc:
-        await sio_service.process_create_message(
-            new_message=new_message.model_dump(by_alias=True), sid=str(uuid.uuid4())
-        )
+        await sio_service.process_create_message(message=new_message.model_dump(by_alias=True, mode="json"), sid=sid)
     assert exc.typename == "ValidationError"
+    assert "text must contain characters" in str(exc.value)
 
     async with registry.session() as session:
         query = select(func.count()).select_from(Message).where(Message.chat_id == chat.id)
