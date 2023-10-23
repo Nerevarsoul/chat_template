@@ -45,7 +45,7 @@ async def process_create_message(new_message: dict, sid: str) -> None:
             message=new_message,
             chat_id=new_message["chat_id"],
             sender_uid=new_message["user_uid"],
-            event_name=s_sio.SioEvents.NEW_MESSAGE,
+            event_name=s_sio.SioEvents.MESSAGE_NEW,
             sid=sid,
             send_to_offline=True,
         )
@@ -62,7 +62,7 @@ async def process_edit_message(message: dict, sid: str) -> None:
         message=message,
         chat_id=message["chat_id"],
         sender_uid=message["user_uid"],
-        event_name=s_sio.SioEvents.CHANGE_MESSAGE,
+        event_name=s_sio.SioEvents.MESSAGE_CHANGE,
         sid=sid,
     )
 
