@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 import pytest
+from fastapi import status
 from sqlalchemy import func, select
 
 from app.db.enums import MessageType
@@ -126,3 +127,24 @@ async def test_retry_update_unread_counter(chat_relationship_db_f):
             assert db_chat_rel.unread_counter == 1
         else:
             raise
+
+
+@pytest.mark.usefixtures("clear_cache")
+@pytest.mark.usefixtures("clear_db")
+async def test_create_message_from_other_user(chat_relationship_db_f):
+    chat_rel = await chat_relationship_db_f.create()
+    chat_rel_2 = await chat_relationship_db_f.create(chat_id=chat_rel.chat_id)
+    new_message = NewMessageFactory.build(sender_id=chat_rel_2.user_uid, chat_id=chat_rel.chat_id)
+
+    sid = str(uuid.uuid4())
+    await cache_service.create_sid_cache(str(chat_rel.user_uid), sid)
+
+    with pytest.raises(Exception) as exc:
+        await sio_service.process_create_message(message=new_message.model_dump(by_alias=True, mode="json"), sid=sid)
+    assert exc.typename == "HTTPException"
+    assert exc.value.status_code == status.HTTP_400_BAD_REQUEST
+
+    async with registry.session() as session:
+        query = select(func.count()).select_from(Message).where(Message.chat_id == chat_rel.chat_id)
+        messages_quantity = (await session.execute(query)).scalar()
+    assert messages_quantity == 0
