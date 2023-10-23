@@ -10,7 +10,7 @@ from starlette.datastructures import Headers
 
 from app import config, db, sio
 from app.db.enums import MessageType
-from app.db.registry import registry
+from app.db.registry import _DBRegistry, registry
 from app.schemas import sio as s_sio
 from app.services import cache as cache_service
 from app.services.utils import check_user_uid_by_sid
@@ -85,20 +85,25 @@ async def _save_message(message_for_saving: s_sio.NewMessage) -> tuple | None:
         ).first()
 
         if saved_message_data:
-            update_unread_counter_query = (
-                update(db.ChatRelationship)
-                .values(unread_counter=db.ChatRelationship.unread_counter + 1)
-                .where(
-                    and_(
-                        db.ChatRelationship.chat_id == message_for_saving.chat_id,
-                        db.ChatRelationship.user_uid != message_for_saving.user_uid,
-                    )
-                )
-            )
-            await session.execute(update_unread_counter_query)
+            await _update_unread_counter(message_for_saving, session)
 
         await session.commit()
     return saved_message_data
+
+
+async def _update_unread_counter(message: s_sio.NewMessage, session: _DBRegistry) -> None:
+    update_unread_counter_query = (
+        update(db.ChatRelationship)
+        .values(unread_counter=db.ChatRelationship.unread_counter + 1)
+        .where(
+            and_(
+                db.ChatRelationship.chat_id == message.chat_id,
+                db.ChatRelationship.user_uid != message.user_uid,
+            )
+        )
+    )
+
+    await session.execute(update_unread_counter_query)
 
 
 async def _update_message(message_for_update: s_sio.EditMessageData) -> tuple | None:
