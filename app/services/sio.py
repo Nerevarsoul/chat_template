@@ -5,12 +5,13 @@ from loguru import logger
 from pydantic.types import UUID4
 from sqlalchemy import and_, func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import coalesce
 from starlette.datastructures import Headers
 
 from app import config, db, sio
 from app.db.enums import MessageType
-from app.db.registry import _DBRegistry, registry
+from app.db.registry import registry
 from app.schemas import sio as s_sio
 from app.services import cache as cache_service
 from app.services.utils import check_user_uid_by_sid
@@ -93,7 +94,7 @@ async def _save_message(message_for_saving: s_sio.NewMessage) -> tuple | None:
     return saved_message_data
 
 
-async def _update_unread_counter(message: s_sio.NewMessage, session: _DBRegistry) -> None:
+async def _update_unread_counter(message: s_sio.NewMessage, session: AsyncSession) -> None:
     update_unread_counter_query = (
         update(db.ChatRelationship)
         .values(unread_counter=db.ChatRelationship.unread_counter + 1)
