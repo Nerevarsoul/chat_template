@@ -5,6 +5,7 @@ from loguru import logger
 from pydantic.types import UUID4
 from sqlalchemy import and_, func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import coalesce
 from starlette.datastructures import Headers
 
@@ -36,16 +37,18 @@ async def disconnect(sid: str) -> None:
     await cache_service.remove_sid_cache(sid)
 
 
-async def process_message(new_message: dict, sid: str) -> None:
-    saved_message_data = await _save_message(s_sio.NewMessage(**new_message))
+@check_user_uid_by_sid
+async def process_create_message(message: dict, sid: str) -> None:
+    saved_message_data = await _save_message(s_sio.NewMessage(**message))
+
     if saved_message_data:
-        new_message["id"] = saved_message_data[0]
-        new_message["time_created"] = saved_message_data[1].timestamp()
+        message["id"] = saved_message_data[0]
+        message["time_created"] = saved_message_data[1].timestamp()
         await _send_message(
-            message=new_message,
-            chat_id=new_message["chat_id"],
-            sender_uid=new_message["user_uid"],
-            event_name=s_sio.SioEvents.NEW_MESSAGE,
+            message=message,
+            chat_id=message["chat_id"],
+            sender_uid=message["user_uid"],
+            event_name=s_sio.SioEvents.MESSAGE_NEW,
             sid=sid,
             send_to_offline=True,
         )
@@ -62,7 +65,7 @@ async def process_edit_message(message: dict, sid: str) -> None:
         message=message,
         chat_id=message["chat_id"],
         sender_uid=message["user_uid"],
-        event_name=s_sio.SioEvents.CHANGE_MESSAGE,
+        event_name=s_sio.SioEvents.MESSAGE_CHANGE,
         sid=sid,
     )
 
@@ -85,20 +88,25 @@ async def _save_message(message_for_saving: s_sio.NewMessage) -> tuple | None:
         ).first()
 
         if saved_message_data:
-            update_unread_counter_query = (
-                update(db.ChatRelationship)
-                .values(unread_counter=db.ChatRelationship.unread_counter + 1)
-                .where(
-                    and_(
-                        db.ChatRelationship.chat_id == message_for_saving.chat_id,
-                        db.ChatRelationship.user_uid != message_for_saving.user_uid,
-                    )
-                )
-            )
-            await session.execute(update_unread_counter_query)
+            await _update_unread_counter(message_for_saving, session)
 
         await session.commit()
     return saved_message_data
+
+
+async def _update_unread_counter(message: s_sio.NewMessage, session: AsyncSession) -> None:
+    update_unread_counter_query = (
+        update(db.ChatRelationship)
+        .values(unread_counter=db.ChatRelationship.unread_counter + 1)
+        .where(
+            and_(
+                db.ChatRelationship.chat_id == message.chat_id,
+                db.ChatRelationship.user_uid != message.user_uid,
+            )
+        )
+    )
+
+    await session.execute(update_unread_counter_query)
 
 
 async def _update_message(message_for_update: s_sio.EditMessageData) -> tuple | None:

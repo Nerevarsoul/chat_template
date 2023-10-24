@@ -6,8 +6,8 @@ from pydantic.types import UUID4
 
 class SioEvents(enum.StrEnum):
     USER_MISSING = "srv:user:missing"
-    NEW_MESSAGE = "srv:msg:new"
-    CHANGE_MESSAGE = "srv:msg:change"
+    MESSAGE_NEW = "srv:msg:new"
+    MESSAGE_CHANGE = "srv:msg:change"
 
 
 class NewMessage(BaseModel):
