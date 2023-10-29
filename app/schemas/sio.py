@@ -8,12 +8,16 @@ class SioEvents(enum.StrEnum):
     USER_MISSING = "srv:user:missing"
     MESSAGE_NEW = "srv:msg:new"
     MESSAGE_CHANGE = "srv:msg:change"
+    TYPING = "srv:typing"
 
 
-class NewMessage(BaseModel):
+class SioMessage(BaseModel):
     user_uid: UUID4 = Field(alias="sender_id")
     chat_id: int
     client_id: UUID4
+
+
+class NewMessage(SioMessage):
     text: str
 
     @field_validator("text")

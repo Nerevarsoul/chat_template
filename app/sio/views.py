@@ -53,3 +53,15 @@ async def edit_message_handler(sid: str, message: dict) -> dict:
         return {"error": e.detail, "error_code": e.status_code}
     except Exception as e:
         return {"error": str(e), "error_code": 500}
+
+
+@sio.on("usr:typing:typing", namespace=NAMESPACE)
+async def typing_handler(sid: str, message: dict) -> dict:
+    logger.debug(f"Typing message: {message}")
+    try:
+        await sio_service.process_typing(message, sid)
+        return {"result": {"success": True}}
+    except HTTPException as e:
+        return {"error": e.detail, "error_code": e.status_code}
+    except Exception as e:
+        return {"error": str(e), "error_code": 500}
