@@ -17,6 +17,8 @@ from app.services import cache as cache_service
 from app.services.utils import check_user_uid_by_sid
 from app.sio.constants import NAMESPACE
 
+DELETED_MESSAGE_TEXT = "deleted"
+
 
 async def connect(sid: str, environ: dict) -> str | None:  # type: ignore[return]
     headers = Headers(raw=environ["asgi.scope"]["headers"])
@@ -83,6 +85,25 @@ async def process_typing(message: dict, sid: str) -> None:
     )
 
 
+async def process_delete_messages(message: dict, sid: str) -> None:
+    deleted_messages_data = await _delete_messages(s_sio.DeleteMessagesData(**message))
+
+    if not deleted_messages_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    del message["message_ids"]
+    for row in deleted_messages_data:
+        message["text"] = DELETED_MESSAGE_TEXT
+        message["id"] = row.id
+        message["time_updated"] = row.time_updated.timestamp()
+        await _send_message(
+            message=message,
+            chat_id=message["chat_id"],
+            sender_uid=message["user_uid"],
+            event_name=s_sio.SioEvents.MESSAGE_CHANGE,
+            sid=sid,
+        )
+
+
 async def _save_message(message_for_saving: s_sio.NewMessage) -> tuple | None:
     async with registry.session() as session:
         insert_message_query = (
@@ -141,6 +162,31 @@ async def _update_message(message_for_update: s_sio.EditMessageData) -> tuple | 
 
         await session.commit()
     return updated_message_data
+
+
+async def _delete_messages(message_for_delete: s_sio.DeleteMessagesData) -> list:
+    async with registry.session() as session:
+        delete_messages_query = (
+            update(db.Message)
+            .values(
+                text=DELETED_MESSAGE_TEXT,
+                search_text=func.to_tsvector(coalesce(DELETED_MESSAGE_TEXT, "")),
+                type_=MessageType.DELETED,
+            )
+            .where(
+                and_(
+                    db.Message.id.in_(message_for_delete.message_ids),
+                    db.Message.user_uid == message_for_delete.user_uid,
+                    db.Message.type_ != MessageType.DELETED,
+                )
+            )
+        )
+        deleted_messages_data = (
+            await session.execute(delete_messages_query.returning(db.Message.id, db.Message.time_updated))
+        ).all()
+
+        await session.commit()
+    return deleted_messages_data
 
 
 async def _send_message(

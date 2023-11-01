@@ -30,3 +30,7 @@ class NewMessage(SioMessage):
 
 class EditMessageData(NewMessage):
     message_id: int
+
+
+class DeleteMessagesData(SioMessage):
+    message_ids: list[int]

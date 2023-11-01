@@ -22,6 +22,10 @@ class SioMessageDataFactory(ModelFactory):
     __model__ = s_sio.SioMessage
 
 
+class DeleteMessagesDataFactory(ModelFactory):
+    __model__ = s_sio.DeleteMessagesData
+
+
 class TokenDataFactory(ModelFactory):
     __model__ = s_contacts.TokenData
 

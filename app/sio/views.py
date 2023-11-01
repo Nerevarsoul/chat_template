@@ -65,3 +65,15 @@ async def typing_handler(sid: str, message: dict) -> dict:
         return {"error": e.detail, "error_code": e.status_code}
     except Exception as e:
         return {"error": str(e), "error_code": 500}
+
+
+@sio.on("usr:msg:delete", namespace=NAMESPACE)
+async def delete_messages_handler(sid: str, message: dict) -> dict:
+    logger.debug(f"Edit message: {message}")
+    try:
+        await sio_service.process_delete_messages(message, sid)
+        return {"result": {"success": True}}
+    except HTTPException as e:
+        return {"error": e.detail, "error_code": e.status_code}
+    except Exception as e:
+        return {"error": str(e), "error_code": 500}
