@@ -18,6 +18,10 @@ class EditMessageDataFactory(ModelFactory):
     __model__ = s_sio.EditMessageData
 
 
+class DeleteMessagesDataFactory(ModelFactory):
+    __model__ = s_sio.DeleteMessagesData
+
+
 class TokenDataFactory(ModelFactory):
     __model__ = s_contacts.TokenData
 

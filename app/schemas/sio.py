@@ -10,10 +10,13 @@ class SioEvents(enum.StrEnum):
     MESSAGE_CHANGE = "srv:msg:change"
 
 
-class NewMessage(BaseModel):
+class SioMessage(BaseModel):
     user_uid: UUID4 = Field(alias="sender_id")
     chat_id: int
     client_id: UUID4
+
+
+class NewMessage(SioMessage):
     text: str
 
     @field_validator("text")
@@ -26,3 +29,7 @@ class NewMessage(BaseModel):
 
 class EditMessageData(NewMessage):
     message_id: int
+
+
+class DeleteMessagesData(SioMessage):
+    message_ids: list[int]
