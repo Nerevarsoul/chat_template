@@ -8,6 +8,7 @@ class SioEvents(enum.StrEnum):
     USER_MISSING = "srv:user:missing"
     MESSAGE_NEW = "srv:msg:new"
     MESSAGE_CHANGE = "srv:msg:change"
+    TYPING = "srv:typing"
 
 
 class SioMessage(BaseModel):

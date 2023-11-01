@@ -73,6 +73,19 @@ async def process_edit_message(message: dict, sid: str) -> None:
 
 
 @check_user_uid_by_sid
+async def process_typing(message: dict, sid: str) -> None:
+    s_sio.SioMessage(**message)  # Validate chat_id and user_uid in message
+
+    await _send_message(
+        message=message,
+        chat_id=message["chat_id"],
+        sender_uid=message["sender_id"],
+        event_name=s_sio.SioEvents.TYPING,
+        sid=sid,
+    )
+
+
+@check_user_uid_by_sid
 async def process_delete_messages(message: dict, sid: str) -> None:
     deleted_messages_data = await _delete_messages(s_sio.DeleteMessagesData(**message))
 
