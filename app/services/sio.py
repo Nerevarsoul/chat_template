@@ -66,7 +66,7 @@ async def process_edit_message(message: dict, sid: str) -> None:
     await _send_message(
         message=message,
         chat_id=message["chat_id"],
-        sender_uid=message["user_uid"],
+        sender_uid=message["sender_id"],
         event_name=s_sio.SioEvents.MESSAGE_CHANGE,
         sid=sid,
     )
@@ -99,7 +99,7 @@ async def process_delete_messages(message: dict, sid: str) -> None:
         await _send_message(
             message=message,
             chat_id=message["chat_id"],
-            sender_uid=message["user_uid"],
+            sender_uid=message["sender_id"],
             event_name=s_sio.SioEvents.MESSAGE_CHANGE,
             sid=sid,
         )
