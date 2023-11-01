@@ -49,7 +49,7 @@ async def process_create_message(message: dict, sid: str) -> None:
         await _send_message(
             message=message,
             chat_id=message["chat_id"],
-            sender_uid=message["user_uid"],
+            sender_uid=message["sender_id"],
             event_name=s_sio.SioEvents.MESSAGE_NEW,
             sid=sid,
             send_to_offline=True,
