@@ -85,6 +85,7 @@ async def process_typing(message: dict, sid: str) -> None:
     )
 
 
+@check_user_uid_by_sid
 async def process_delete_messages(message: dict, sid: str) -> None:
     deleted_messages_data = await _delete_messages(s_sio.DeleteMessagesData(**message))
 
