@@ -26,18 +26,16 @@ async def test_delete_one_message(chat_relationship_db_f, message_db_f, mocker):
     sid = str(uuid.uuid4())
     await cache_service.create_sid_cache(str(chat_rel.user_uid), sid)
 
-    send_message_mock = mocker.patch("app.services.sio._send_message")
+    send_online_message_mock = mocker.patch("app.services.sio._send_online_message")
     response_time = datetime.utcnow()
     await sio_service.process_delete_messages(message=message_for_delete, sid=sid)
 
-    send_message_mock.assert_awaited_once_with(
+    send_online_message_mock.assert_awaited_once_with(
         message=message_for_delete,
-        chat_id=chat_rel.chat_id,
-        sender_uid=str(chat_rel.user_uid),
+        recipients_sid=[sid],
         event_name=s_sio.SioEvents.MESSAGE_CHANGE,
-        sid=sid,
     )
-    deleted_message_data = send_message_mock.await_args.kwargs["message"]
+    deleted_message_data = send_online_message_mock.await_args.kwargs["message"]
     deleted_message_data_time_updated = datetime.fromtimestamp(deleted_message_data["time_updated"])
     assert deleted_message_data_time_updated > response_time
     assert deleted_message_data_time_updated < datetime.utcnow()
@@ -76,11 +74,11 @@ async def test_delete_a_few_messages(chat_relationship_db_f, message_db_f, mocke
     sid = str(uuid.uuid4())
     await cache_service.create_sid_cache(str(chat_rel.user_uid), sid)
 
-    send_message_mock = mocker.patch("app.services.sio._send_message")
+    send_online_message_mock = mocker.patch("app.services.sio._send_online_message")
     response_time = datetime.utcnow()
     await sio_service.process_delete_messages(message=message_for_delete, sid=sid)
 
-    assert send_message_mock.await_count == messages_count
+    assert send_online_message_mock.await_count == messages_count
 
     async with registry.session() as session:
         query = (
@@ -91,9 +89,9 @@ async def test_delete_a_few_messages(chat_relationship_db_f, message_db_f, mocke
         messages_quantity = (await session.execute(query)).scalar()
     assert messages_quantity == messages_count
 
-    for id in message_ids:
+    for message_id in message_ids:
         async with registry.session() as session:
-            query = select(Message).where(Message.id == id)
+            query = select(Message).where(Message.id == message_id)
             deleted_message = (await session.execute(query)).scalar()
 
         assert deleted_message.time_updated > response_time

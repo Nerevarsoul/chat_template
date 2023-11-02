@@ -25,18 +25,16 @@ async def test_edit_message(chat_relationship_db_f, message_db_f, mocker):
     sid = str(uuid.uuid4())
     await cache_service.create_sid_cache(str(chat_rel.user_uid), sid)
 
-    send_message_mock = mocker.patch("app.services.sio._send_message")
+    send_online_message_mock = mocker.patch("app.services.sio._send_online_message")
     response_time = datetime.utcnow()
     await sio_service.process_edit_message(message=edited_message, sid=sid)
 
-    send_message_mock.assert_awaited_once_with(
+    send_online_message_mock.assert_awaited_once_with(
         message=edited_message,
-        chat_id=chat_rel.chat_id,
-        sender_uid=str(chat_rel.user_uid),
+        recipients_sid=[sid],
         event_name=s_sio.SioEvents.MESSAGE_CHANGE,
-        sid=sid,
     )
-    edited_message_data = send_message_mock.await_args.kwargs["message"]
+    edited_message_data = send_online_message_mock.await_args.kwargs["message"]
     edited_message_data_time_updated = datetime.fromtimestamp(edited_message_data["time_updated"])
     assert edited_message_data_time_updated > response_time
     assert edited_message_data_time_updated < datetime.utcnow()
@@ -69,20 +67,18 @@ async def test_retry_edit_message(chat_relationship_db_f, message_db_f, mocker):
     sid = str(uuid.uuid4())
     await cache_service.create_sid_cache(str(chat_rel.user_uid), sid)
 
-    send_message_mock = mocker.patch("app.services.sio._send_message")
+    send_online_message_mock = mocker.patch("app.services.sio._send_online_message")
     await sio_service.process_edit_message(message=edited_message, sid=sid)
     response_time = datetime.utcnow()
     await sio_service.process_edit_message(message=edited_message, sid=sid)
 
-    assert send_message_mock.await_count == 2
-    send_message_mock.assert_awaited_with(
+    assert send_online_message_mock.await_count == 2
+    send_online_message_mock.assert_awaited_with(
         message=edited_message,
-        chat_id=chat_rel.chat_id,
-        sender_uid=str(chat_rel.user_uid),
+        recipients_sid=[sid],
         event_name=s_sio.SioEvents.MESSAGE_CHANGE,
-        sid=sid,
     )
-    edited_message_data = send_message_mock.await_args.kwargs["message"]
+    edited_message_data = send_online_message_mock.await_args.kwargs["message"]
     edited_message_data_time_updated = datetime.fromtimestamp(edited_message_data["time_updated"])
     assert edited_message_data_time_updated > response_time
     assert edited_message_data_time_updated < datetime.utcnow()
