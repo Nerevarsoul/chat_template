@@ -1,6 +1,6 @@
 import random
 import uuid
-from unittest.mock import patch
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -51,16 +51,18 @@ def test_get_offline_recipiets_uid() -> None:
     assert set([recipints_uid[0], recipints_uid[2]]) == set(offline_recipiets_uid)
 
 
-async def test_send_online_mesage() -> None:
+async def test_send_online_mesage(mocker) -> None:
     count_of_recipients = random.randint(5, 10)
     recipients_sid = [str(uuid.uuid4()) for _ in range(count_of_recipients)]
     message = {"test": "mesasge"}
     event_name = "event:name"
 
-    with patch("app.services.sio.sio.sio.emit") as sio_emit_mock:
-        await sio_service._send_online_message(recipients_sid=recipients_sid, message=message, event_name=event_name)
+    sio_mock = mocker.patch("app.services.sio.sio.sio")
+    sio_mock.emit = AsyncMock()
 
-    assert sio_emit_mock.await_count == count_of_recipients
+    await sio_service._send_online_message(recipients_sid=recipients_sid, message=message, event_name=event_name)
+
+    assert sio_mock.emit.await_count == count_of_recipients
 
     for sid in recipients_sid:
-        sio_emit_mock.assert_any_await(event=event_name, data=message, to=sid, namespace=NAMESPACE)
+        sio_mock.emit.assert_any_await(event=event_name, data=message, to=sid, namespace=NAMESPACE)
