@@ -40,16 +40,14 @@ async def disconnect(sid: str) -> None:
 
 
 @check_user_uid_by_sid
-async def process_create_message(message: dict, sid: str) -> None:
-    saved_message_data = await _save_message(s_sio.NewMessage(**message))
+async def process_create_message(sio_payload: dict, sid: str) -> None:
+    saved_message_data = await _save_message(s_sio.SioNewMessagePayload(**sio_payload))
 
     if saved_message_data:
-        message["id"] = saved_message_data[0]
-        message["time_created"] = saved_message_data[1].timestamp()
+        sio_payload["id"] = saved_message_data[0]
+        sio_payload["time_created"] = saved_message_data[1].timestamp()
         await _send_message(
-            message=message,
-            chat_id=message["chat_id"],
-            sender_uid=message["sender_id"],
+            message=sio_payload,
             event_name=s_sio.SioEvents.MESSAGE_NEW,
             sid=sid,
             send_to_offline=True,
@@ -57,55 +55,49 @@ async def process_create_message(message: dict, sid: str) -> None:
 
 
 @check_user_uid_by_sid
-async def process_edit_message(message: dict, sid: str) -> None:
-    edited_message_data = await _update_message(s_sio.EditMessageData(**message))
+async def process_edit_message(sio_payload: dict, sid: str) -> None:
+    edited_message_data = await _update_message(s_sio.SioEditMessagePayload(**sio_payload))
 
     if not edited_message_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    message["time_updated"] = edited_message_data[0].timestamp()
+    sio_payload["time_updated"] = edited_message_data[0].timestamp()
     await _send_message(
-        message=message,
-        chat_id=message["chat_id"],
-        sender_uid=message["sender_id"],
+        message=sio_payload,
         event_name=s_sio.SioEvents.MESSAGE_CHANGE,
         sid=sid,
     )
 
 
 @check_user_uid_by_sid
-async def process_typing(message: dict, sid: str) -> None:
-    s_sio.SioMessage(**message)  # Validate chat_id and user_uid in message
+async def process_typing(sio_payload: dict, sid: str) -> None:
+    s_sio.SioPayload(**sio_payload)  # Validate chat_id and user_uid in payload
 
     await _send_message(
-        message=message,
-        chat_id=message["chat_id"],
-        sender_uid=message["sender_id"],
+        message=sio_payload,
         event_name=s_sio.SioEvents.TYPING,
         sid=sid,
     )
 
 
 @check_user_uid_by_sid
-async def process_delete_messages(message: dict, sid: str) -> None:
-    deleted_messages_data = await _delete_messages(s_sio.DeleteMessagesData(**message))
+async def process_delete_messages(sio_payload: dict, sid: str) -> None:
+    deleted_messages_data = await _delete_messages(s_sio.SioDeleteMessagesPayload(**sio_payload))
 
     if not deleted_messages_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    del message["message_ids"]
+    del sio_payload["message_ids"]
     for row in deleted_messages_data:
-        message["text"] = DELETED_MESSAGE_TEXT
-        message["id"] = row.id
-        message["time_updated"] = row.time_updated.timestamp()
+        sio_payload["text"] = DELETED_MESSAGE_TEXT
+        sio_payload["id"] = row.id
+        sio_payload["time_updated"] = row.time_updated.timestamp()
         await _send_message(
-            message=message,
-            chat_id=message["chat_id"],
-            sender_uid=message["sender_id"],
+            message=sio_payload,
             event_name=s_sio.SioEvents.MESSAGE_CHANGE,
             sid=sid,
         )
 
 
-async def _save_message(message_for_saving: s_sio.NewMessage) -> tuple | None:
+async def _save_message(message_for_saving: s_sio.SioNewMessagePayload) -> tuple | None:
     async with registry.session() as session:
         insert_message_query = (
             pg_insert(db.Message)
@@ -129,7 +121,7 @@ async def _save_message(message_for_saving: s_sio.NewMessage) -> tuple | None:
     return saved_message_data
 
 
-async def _update_unread_counter(message: s_sio.NewMessage, session: AsyncSession) -> None:
+async def _update_unread_counter(message: s_sio.SioNewMessagePayload, session: AsyncSession) -> None:
     update_unread_counter_query = (
         update(db.ChatRelationship)
         .values(unread_counter=db.ChatRelationship.unread_counter + 1)
@@ -144,7 +136,7 @@ async def _update_unread_counter(message: s_sio.NewMessage, session: AsyncSessio
     await session.execute(update_unread_counter_query)
 
 
-async def _update_message(message_for_update: s_sio.EditMessageData) -> tuple | None:
+async def _update_message(message_for_update: s_sio.SioEditMessagePayload) -> tuple | None:
     async with registry.session() as session:
         update_message_query = (
             update(db.Message)
@@ -165,7 +157,7 @@ async def _update_message(message_for_update: s_sio.EditMessageData) -> tuple | 
     return updated_message_data
 
 
-async def _delete_messages(message_for_delete: s_sio.DeleteMessagesData) -> list:
+async def _delete_messages(message_for_delete: s_sio.SioDeleteMessagesPayload) -> list:
     async with registry.session() as session:
         delete_messages_query = (
             update(db.Message)
@@ -192,13 +184,11 @@ async def _delete_messages(message_for_delete: s_sio.DeleteMessagesData) -> list
 
 async def _send_message(
     message: dict,
-    chat_id: int,
-    sender_uid: UUID4,
     event_name: str,
     sid: str = "",
     send_to_offline: bool = False,
 ) -> None:
-    recipients_uid = await _get_recipients_uid(chat_id)
+    recipients_uid = await _get_recipients_uid(message["chat_id"])
     logger.debug(f"Recipients for - {event_name} - {recipients_uid}")
     recipients_data = await cache_service.get_online_session(recipients_uid=recipients_uid)
     online_recipients_sid = _get_online_recipients_sid(recipients_data)
@@ -209,7 +199,9 @@ async def _send_message(
         offline_recipients_uid = _get_offline_recipients_uid(recipients_data)
         if offline_recipients_uid:
             logger.debug(f"Online recipients for - {event_name} - {offline_recipients_uid}")
-            await _send_ofline_message(recipients_uid=offline_recipients_uid, message=message, sender_uid=sender_uid)
+            await _send_ofline_message(
+                recipients_uid=offline_recipients_uid, message=message, sender_uid=message["sender_id"]
+            )
 
 
 async def _get_recipients_uid(chat_id: int) -> list[str]:

@@ -11,13 +11,13 @@ class SioEvents(enum.StrEnum):
     TYPING = "srv:typing"
 
 
-class SioMessage(BaseModel):
+class SioPayload(BaseModel):
     user_uid: UUID4 = Field(alias="sender_id")
     chat_id: int
     client_id: UUID4
 
 
-class NewMessage(SioMessage):
+class SioNewMessagePayload(SioPayload):
     text: str
 
     @field_validator("text")
@@ -28,9 +28,9 @@ class NewMessage(SioMessage):
         return clear_text
 
 
-class EditMessageData(NewMessage):
+class SioEditMessagePayload(SioNewMessagePayload):
     message_id: int
 
 
-class DeleteMessagesData(SioMessage):
+class SioDeleteMessagesPayload(SioPayload):
     message_ids: list[int]

@@ -10,20 +10,20 @@ class CreateChatDataFactory(ModelFactory):
     __model__ = s_chats.CreateChatData
 
 
-class NewMessageFactory(ModelFactory):
-    __model__ = s_sio.NewMessage
+class SioNewMessagePayloadFactory(ModelFactory):
+    __model__ = s_sio.SioNewMessagePayload
 
 
-class EditMessageDataFactory(ModelFactory):
-    __model__ = s_sio.EditMessageData
+class SioEditMessagePayloadFactory(ModelFactory):
+    __model__ = s_sio.SioEditMessagePayload
 
 
-class SioMessageDataFactory(ModelFactory):
-    __model__ = s_sio.SioMessage
+class SioPayloadFactory(ModelFactory):
+    __model__ = s_sio.SioPayload
 
 
-class DeleteMessagesDataFactory(ModelFactory):
-    __model__ = s_sio.DeleteMessagesData
+class SioDeleteMessagesPayloadFactory(ModelFactory):
+    __model__ = s_sio.SioDeleteMessagesPayload
 
 
 class TokenDataFactory(ModelFactory):
