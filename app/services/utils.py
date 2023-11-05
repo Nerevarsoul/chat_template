@@ -27,10 +27,10 @@ async def get_current_user(user_id: str | None = Header(default=None)) -> UUID4:
 
 def check_user_uid_by_sid(coro: Callable[[dict, str], Awaitable[T]]) -> Callable[[dict, str], Awaitable[T]]:
     @wraps(coro)
-    async def wrapped(message: dict, sid: str) -> T:
+    async def wrapped(sio_payload: dict, sid: str) -> T:
         user_uid = await cache_service.get_user_uid_by_sid(sid)
-        if message["sender_id"] != user_uid:
+        if sio_payload["sender_id"] != user_uid:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-        return await coro(message, sid)
+        return await coro(sio_payload, sid)
 
     return wrapped
