@@ -5,7 +5,7 @@ import pytest
 from app.schemas import sio as s_sio
 from app.services import cache as cache_service
 from app.services import sio as sio_service
-from tests.factories.schemas import SioPayloadFactory
+from tests.factories.schemas import SioBasePayloadFactory
 
 
 @pytest.mark.usefixtures("clear_cache")
@@ -13,7 +13,7 @@ from tests.factories.schemas import SioPayloadFactory
 async def test_typing(chat_relationship_db_f, mocker):
     chat_rel = await chat_relationship_db_f.create()
 
-    sio_typing_payload = SioPayloadFactory.build(sender_id=chat_rel.user_uid, chat_id=chat_rel.chat_id).model_dump(
+    sio_typing_payload = SioBasePayloadFactory.build(sender_id=chat_rel.user_uid, chat_id=chat_rel.chat_id).model_dump(
         by_alias=True, mode="json"
     )
 

@@ -41,7 +41,7 @@ async def disconnect(sid: str) -> None:
 
 @check_user_uid_by_sid
 async def process_create_message(sio_payload: dict, sid: str) -> None:
-    saved_message_data = await _save_message(s_sio.SioNewMessagePayload(**sio_payload))
+    saved_message_data = await _save_message(s_sio.NewMessagePayload(**sio_payload))
 
     if saved_message_data:
         sio_payload["id"] = saved_message_data[0]
@@ -56,7 +56,7 @@ async def process_create_message(sio_payload: dict, sid: str) -> None:
 
 @check_user_uid_by_sid
 async def process_edit_message(sio_payload: dict, sid: str) -> None:
-    edited_message_data = await _update_message(s_sio.SioEditMessagePayload(**sio_payload))
+    edited_message_data = await _update_message(s_sio.EditMessagePayload(**sio_payload))
 
     if not edited_message_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
@@ -70,7 +70,7 @@ async def process_edit_message(sio_payload: dict, sid: str) -> None:
 
 @check_user_uid_by_sid
 async def process_typing(sio_payload: dict, sid: str) -> None:
-    s_sio.SioPayload(**sio_payload)  # Validate chat_id and user_uid in payload
+    s_sio.BasePayload(**sio_payload)  # Validate chat_id and user_uid in payload
 
     await _send_message(
         message=sio_payload,
@@ -81,7 +81,7 @@ async def process_typing(sio_payload: dict, sid: str) -> None:
 
 @check_user_uid_by_sid
 async def process_delete_messages(sio_payload: dict, sid: str) -> None:
-    deleted_messages_data = await _delete_messages(s_sio.SioDeleteMessagesPayload(**sio_payload))
+    deleted_messages_data = await _delete_messages(s_sio.DeleteMessagesPayload(**sio_payload))
 
     if not deleted_messages_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
@@ -97,7 +97,7 @@ async def process_delete_messages(sio_payload: dict, sid: str) -> None:
         )
 
 
-async def _save_message(message_for_saving: s_sio.SioNewMessagePayload) -> tuple | None:
+async def _save_message(message_for_saving: s_sio.NewMessagePayload) -> tuple | None:
     async with registry.session() as session:
         insert_message_query = (
             pg_insert(db.Message)
@@ -121,7 +121,7 @@ async def _save_message(message_for_saving: s_sio.SioNewMessagePayload) -> tuple
     return saved_message_data
 
 
-async def _update_unread_counter(message: s_sio.SioNewMessagePayload, session: AsyncSession) -> None:
+async def _update_unread_counter(message: s_sio.NewMessagePayload, session: AsyncSession) -> None:
     update_unread_counter_query = (
         update(db.ChatRelationship)
         .values(unread_counter=db.ChatRelationship.unread_counter + 1)
@@ -136,7 +136,7 @@ async def _update_unread_counter(message: s_sio.SioNewMessagePayload, session: A
     await session.execute(update_unread_counter_query)
 
 
-async def _update_message(message_for_update: s_sio.SioEditMessagePayload) -> tuple | None:
+async def _update_message(message_for_update: s_sio.EditMessagePayload) -> tuple | None:
     async with registry.session() as session:
         update_message_query = (
             update(db.Message)
@@ -157,7 +157,7 @@ async def _update_message(message_for_update: s_sio.SioEditMessagePayload) -> tu
     return updated_message_data
 
 
-async def _delete_messages(message_for_delete: s_sio.SioDeleteMessagesPayload) -> list:
+async def _delete_messages(message_for_delete: s_sio.DeleteMessagesPayload) -> list:
     async with registry.session() as session:
         delete_messages_query = (
             update(db.Message)

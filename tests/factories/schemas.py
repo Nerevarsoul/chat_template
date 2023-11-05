@@ -11,19 +11,19 @@ class CreateChatDataFactory(ModelFactory):
 
 
 class SioNewMessagePayloadFactory(ModelFactory):
-    __model__ = s_sio.SioNewMessagePayload
+    __model__ = s_sio.NewMessagePayload
 
 
 class SioEditMessagePayloadFactory(ModelFactory):
-    __model__ = s_sio.SioEditMessagePayload
+    __model__ = s_sio.EditMessagePayload
 
 
-class SioPayloadFactory(ModelFactory):
-    __model__ = s_sio.SioPayload
+class SioBasePayloadFactory(ModelFactory):
+    __model__ = s_sio.BasePayload
 
 
 class SioDeleteMessagesPayloadFactory(ModelFactory):
-    __model__ = s_sio.SioDeleteMessagesPayload
+    __model__ = s_sio.DeleteMessagesPayload
 
 
 class TokenDataFactory(ModelFactory):
